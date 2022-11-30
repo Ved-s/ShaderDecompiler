@@ -2,15 +2,12 @@
 {
     public class AssignExpression : ComplexExpression
     {
-        public readonly RegisterExpression Destination;
-        public Expression Source;
+        public override int ArgumentCount => 2;
 
-        public AssignExpression(RegisterExpression destination, Expression source)
-        {
-            Destination = destination;
-            Source = source;
-        }
+        public RegisterExpression Destination => SubExpressions[0] as RegisterExpression ?? throw new InvalidDataException();
+        public Expression Source => SubExpressions[1];
 
+        public override bool SimplifyOnWeightExceeded => true;
         public override string Decompile(ShaderDecompilationContext context)
         {
             bool needsType = context.Scan.Arguments.All(arg => arg.RegisterType != Destination.Type || arg.Register != Destination.Index)
@@ -33,36 +30,35 @@
             return $"{type}{Destination.Decompile(context)} = {Source.Decompile(context)}";
         }
 
-        public override IEnumerable<Expression> EnumerateSubExpressions()
+        public override bool Clean(ShaderDecompilationContext context)
         {
-            yield return Destination;
-            yield return Source;
-        }
-
-        public override Expression? Simplify(ShaderDecompilationContext context, out bool fail)
-        {
-            fail = true;
-            fail &= !Source.SafeSimplify(context, out Source);
-
             if (!context.Scan.RegistersReferenced.Contains((Destination.Type, Destination.Index, false)))
             {
                 // Don't remove registers that weren't used in the first place
-                return this;
+                return false;
             }
 
+            if (context.Scan.Arguments.Any(arg => arg.Output && arg.RegisterType == Destination.Type && arg.Register == Destination.Index))
+                return false;
 
             for (int i = context.CurrentExpressionIndex + 1; i < context.Expressions.Count; i++)
             {
+                if (context.Expressions[i] is null)
+                    continue;
+
                 bool used = i != context.CurrentExpressionIndex && context.Expressions[i].IsRegisterUsed(Destination.Type, Destination.Index);
                 if (used)
-                    return this;
+                    return false;
 
                 if (context.Expressions[i] is AssignExpression assign && assign.Destination.IsSameRegisterAs(Destination))
                     break;
             }
-            // Register isn't used later
-            fail = false;
-            return null;
+            return true;
+        }
+
+        public override string ToString()
+        {
+            return $"{Destination} = {Source}";
         }
     }
 }

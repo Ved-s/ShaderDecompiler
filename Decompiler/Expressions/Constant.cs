@@ -26,5 +26,17 @@ namespace ShaderDecompiler.Decompiler.Expressions
         }
 
         public override bool IsRegisterUsed(ParameterRegisterType type, uint index) => false;
+
+        public override string ToString()
+        {
+            return $"float{Values.Length}({string.Join(", ", Values.Select(f => f.ToString(CultureInfo.InvariantCulture)))})";
+        }
+
+        public override Expression Clone()
+        {
+            float[] copy = new float[Values.Length];
+            Array.Copy(Values, copy, Values.Length);
+            return new ConstantExpression(copy);
+        }
     }
 }

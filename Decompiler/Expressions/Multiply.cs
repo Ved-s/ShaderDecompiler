@@ -2,32 +2,21 @@
 {
     public class MultiplyExpression : ComplexExpression
     {
-        public Expression A;
-        public Expression B;
+        public Expression A => SubExpressions[0];
+        public Expression B => SubExpressions[1];
+        public override int ArgumentCount => 2;
 
-        public MultiplyExpression(Expression a, Expression b)
-        {
-            A = a;
-            B = b;
-        }
+
 
         public override string Decompile(ShaderDecompilationContext context)
         {
             return $"{A.Decompile(context)} * {B.Decompile(context)}";
         }
 
-        public override IEnumerable<Expression> EnumerateSubExpressions()
-        {
-            yield return A;
-            yield return B;
-        }
 
-        public override Expression? Simplify(ShaderDecompilationContext context, out bool fail)
+        public override string ToString()
         {
-            fail = true;
-            fail &= !A.SafeSimplify(context, out A);
-            fail &= !B.SafeSimplify(context, out B);
-            return this;
+            return $"{A} * {B}";
         }
     }
 }

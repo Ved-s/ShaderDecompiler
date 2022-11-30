@@ -19,12 +19,7 @@ namespace ShaderDecompiler.Decompiler
 
         public static Expression ToExpr(this SourceParameter src)
         {
-            if (src.Modifier != SourceModifier.None)
-            {
-                throw new NotImplementedException();
-            }
-
-            return new RegisterExpression(
+            RegisterExpression reg = new(
                 src.RegisterType,
                 src.Register,
                 src.SwizzleX,
@@ -32,8 +27,25 @@ namespace ShaderDecompiler.Decompiler
                 src.SwizzleZ,
                 src.SwizzleW,
                 false);
+
+            switch (src.Modifier)
+            {
+                case SourceModifier.None:
+                    return reg;
+
+                case SourceModifier.Negate:
+                    return ComplexExpression.Create<NegateExpression>(reg);
+
+                case SourceModifier.Abs:
+                    return new CallExpression("abs", reg);
+
+                default:
+                    throw new NotImplementedException();
+            }
+
         }
 
-        public static AssignExpression Assign(this RegisterExpression regexpr, Expression expr) => new(regexpr, expr);
+        public static AssignExpression Assign(this RegisterExpression regexpr, Expression expr) 
+            => ComplexExpression.Create<AssignExpression>(regexpr, expr);
     }
 }

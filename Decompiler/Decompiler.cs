@@ -2,6 +2,11 @@
 using ShaderDecompiler.Structures;
 using System.Diagnostics;
 
+// TODO Truncate source swizzles to destination swizzle
+// temp0.xy = const1.xyzw + const2.xxxx -> temp0.xy = const1.xy + const2.xx
+
+// TODO Make register simplification smarter, accumulate used swizzles when scanning for used registers
+
 namespace ShaderDecompiler.Decompiler
 {
     public class Decompiler
@@ -81,6 +86,9 @@ namespace ShaderDecompiler.Decompiler
 
                         for (int i = 0; i < context.Expressions.Count; i++)
                         {
+                            if (context.Expressions[i] is null)
+                                continue;
+
                             context.CurrentExpressionIndex = i;
                             Writer.Write(context.Expressions[i].Decompile(context));
                             Writer.Write(";");
@@ -262,6 +270,7 @@ namespace ShaderDecompiler.Decompiler
                             arg.Output = true;
                             break;
 
+                        case ParameterRegisterType.Misctype:
                         case ParameterRegisterType.Sampler:
                             break;
 
@@ -417,26 +426,58 @@ namespace ShaderDecompiler.Decompiler
 
             bool canSimplify = true;
             List<int> removeIndexes = new();
+            int cycle = -1;
             while (canSimplify)
             {
+                cycle++;
+                Console.WriteLine($"Simplification cycle {cycle}: {context.Expressions.Count} expressions");
+
                 canSimplify = false;
                 removeIndexes.Clear();
                 for (int i = 0; i < context.Expressions.Count; i++)
                 {
-                    context.CurrentExpressionIndex = i;
-                    Expression? expr = context.Expressions[i].Simplify(context, out bool fail);
-                    if (fail)
-                        continue;
-                    else
-                        canSimplify = true;
-
+                    Expression? expr = context.Expressions[i];
                     if (expr is null)
+                        continue;
+ 
+                    context.CurrentExpressionIndex = i;
+                    context.CurrentExpressionExceedsWeight = expr.CalculateWeight() > context.SimplificationWeightThreshold;
+                    if (context.CurrentExpressionExceedsWeight && !expr.SimplifyOnWeightExceeded)
+                        continue;
+
+                    context.Expressions[i] = expr.Simplify(context, out bool fail);
+                    if (!fail)
+                        canSimplify = true;
+                }
+
+                for (int i = 0; i < context.Expressions.Count; i++)
+                {
+                    context.CurrentExpressionIndex = i;
+                    if (context.Expressions[i] is null || context.Expressions[i].Clean(context))
                     {
                         context.Expressions.RemoveAt(i);
                         i--;
-                        continue;
                     }
-                    context.Expressions[i] = expr;
+                }
+            }
+
+            bool canClean = true;
+            cycle = -1;
+            while (canClean)
+            {
+                canClean = false;
+                cycle++;
+                Console.WriteLine($"Cleaning cycle {cycle}: {context.Expressions.Count} expressions");
+
+                for (int i = 0; i < context.Expressions.Count; i++)
+                {
+                    context.CurrentExpressionIndex = i;
+                    if (context.Expressions[i].Clean(context))
+                    {
+                        context.Expressions.RemoveAt(i);
+                        i--;
+                        canClean = true;
+                    }
                 }
             }
         }
@@ -451,6 +492,7 @@ namespace ShaderDecompiler.Decompiler
             {
                 case OpcodeType.Nop:
                 case OpcodeType.End:
+                case OpcodeType.Comment:
                 case OpcodeType.Dcl:
                     return null;
 
@@ -463,7 +505,7 @@ namespace ShaderDecompiler.Decompiler
                     break;
 
                 case OpcodeType.Mul:
-                    assign = new MultiplyExpression(op.Sources[0].ToExpr(), op.Sources[1].ToExpr());
+                    assign = ComplexExpression.Create<MultiplyExpression>(op.Sources[0].ToExpr(), op.Sources[1].ToExpr());
                     break;
 
                 case OpcodeType.Mov:
@@ -481,7 +523,10 @@ namespace ShaderDecompiler.Decompiler
                     break;
 
             }
-            return new AssignExpression(op.Destination!.Value.ToExpr(), assign);
+            if (!op.Destination.HasValue)
+                return assign;
+
+            return ComplexExpression.Create<AssignExpression>(op.Destination!.Value.ToExpr(), assign);
         }
     }
 }

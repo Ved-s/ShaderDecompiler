@@ -4,7 +4,6 @@ namespace ShaderDecompiler;
 
 public static partial class Program
 {
-
     public static void Main()
     {
         string filename = "../../../TestData/Shader.fxb";
@@ -13,7 +12,7 @@ public static partial class Program
 
         FileStream fs = File.OpenRead(filename);
         BinaryReader reader = new(fs);
-
+        
         HLSLEffect effect = HLSLEffect.Read(reader);
 
         reader.Close();
