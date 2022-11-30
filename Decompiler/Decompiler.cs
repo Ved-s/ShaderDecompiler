@@ -504,19 +504,29 @@ namespace ShaderDecompiler.Decompiler
                     assign = new ConstantExpression(values);
                     break;
 
-                case OpcodeType.Mul:
+                case OpcodeType.Add:
+					assign = ComplexExpression.Create<AddExpression>(op.Sources[0].ToExpr(), op.Sources[1].ToExpr());
+					break;
+				case OpcodeType.Sub:
+					assign = ComplexExpression.Create<SubstractExpression>(op.Sources[0].ToExpr(), op.Sources[1].ToExpr());
+					break;
+				case OpcodeType.Mul:
                     assign = ComplexExpression.Create<MultiplyExpression>(op.Sources[0].ToExpr(), op.Sources[1].ToExpr());
                     break;
+                // No division expression here.
 
                 case OpcodeType.Mov:
                     assign = op.Sources[0].ToExpr();
                     break;
 
-                case OpcodeType.Texld:
+				case OpcodeType.Lrp:
+					assign = new CallExpression("lerp", op.Sources[0].ToExpr(), op.Sources[1].ToExpr(), op.Sources[2].ToExpr());
+					break;
+				case OpcodeType.Texld:
                     assign = new CallExpression("tex2D", op.Sources[1].ToExpr(), op.Sources[0].ToExpr());
                     break;
 
-                default:
+				default:
                     Expression[] args = op.Sources.Select(src => src.ToExpr()).ToArray();
                     string name = op.Type.ToString().ToLower();
                     assign = new CallExpression(name, args);
