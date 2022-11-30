@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <Target Name="CompileShader" AfterTargets="Build" Condition="Exists('TestData/Shader.fx')">
+	<Exec Command="fxc /T fx_2_0 /Fo TestData/Shader.fxb TestData/Shader.fx" />
+  </Target>
+	
+</Project>
