@@ -336,7 +336,6 @@ namespace ShaderDecompiler
                         break;
                 }
 
-                
             }
             else if (value.Type.Class == ObjectClass.Object)
             {

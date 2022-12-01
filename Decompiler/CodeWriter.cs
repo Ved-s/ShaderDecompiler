@@ -12,6 +12,30 @@ namespace ShaderDecompiler.Decompiler
 
         public void Write(string str)
         {
+            if (str.Contains('\n'))
+            {
+                int newlines = str.Count(c => c == '\n');
+                if (newlines > 1 || str[^1] != '\n')
+                {
+                    int pos = 0;
+                    while (true)
+                    {
+                        int nextLine = str.IndexOf('\n', pos);
+                        if (nextLine < 0)
+                        { 
+                            if (pos < str.Length)
+                                Write(str[pos..]);
+                            break;
+                        }
+
+                        nextLine++;
+                        Write(str[pos..nextLine]);
+                        pos = nextLine;
+                    }
+                    return;
+                }
+            }
+
             WriteLineStart();
             Builder.Append(str);
             LastSpace = str.EndsWith(" ");

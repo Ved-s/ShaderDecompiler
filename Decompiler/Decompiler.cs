@@ -67,8 +67,11 @@ namespace ShaderDecompiler.Decompiler
                                 Writer.WriteSpaced(arg.Input ? "inout" : "out");
 
                             Writer.WriteSpaced("float");
-                            if (arg.Size > 1)
-                                Writer.Write(arg.Size.ToString());
+                            uint argSize = arg.Size;
+                            if (context.Scan.RegisterSizes.TryGetValue((arg.RegisterType, arg.Register), out uint regSize))
+                                argSize = Math.Max(argSize, regSize);
+                            if (argSize > 1)
+                                Writer.Write(argSize.ToString());
                             Writer.WriteSpaced(context.RegisterNames[(arg.RegisterType, arg.Register)]);
                             Writer.WriteSpaced(":");
                             Writer.WriteSpaced(arg.Usage.ToString().ToUpper());
@@ -298,11 +301,7 @@ namespace ShaderDecompiler.Decompiler
                             break;
                     }
 
-                    if (result.RegisterSizes.TryGetValue((dest.RegisterType, dest.Register), out uint regMaxSize))
-                        regMaxSize = 1;
-
-                    regMaxSize = Math.Max(regMaxSize, registerSize);
-                    result.RegisterSizes[(dest.RegisterType, dest.Register)] = regMaxSize;
+                    result.UpdateRegisterSize(dest.RegisterType, dest.Register, registerSize);
                 }
 
                 foreach (SourceParameter? src in op.Sources)
@@ -319,16 +318,10 @@ namespace ShaderDecompiler.Decompiler
                             break;
                     }
 
-                    HashSet<Swizzle> uniqueChannels = new()
-                    {
-                        src.Value.SwizzleX, src.Value.SwizzleY, src.Value.SwizzleZ, src.Value.SwizzleW
-                    };
+                    Swizzle maxSwizzle = (Swizzle)Math.Max(Math.Max((int)src.Value.SwizzleX, (int)src.Value.SwizzleY), Math.Max((int)src.Value.SwizzleZ, (int)src.Value.SwizzleW));
+                    uint registerSize = (uint)maxSwizzle + 1;
 
-                    if (result.RegisterSizes.TryGetValue((src.Value.RegisterType, src.Value.Register), out uint regMaxSize))
-                        regMaxSize = 1;
-
-                    regMaxSize = Math.Max(regMaxSize, (uint)uniqueChannels.Count);
-                    result.RegisterSizes[(src.Value.RegisterType, src.Value.Register)] = regMaxSize;
+                    result.UpdateRegisterSize(src.Value.RegisterType, src.Value.Register, registerSize);
                 }
             }
 
@@ -340,7 +333,7 @@ namespace ShaderDecompiler.Decompiler
                     _ => ParameterRegisterType.Const
                 };
 
-                result.RegisterSizes[(type, constant.RegIndex)] = Math.Max(1, constant.TypeInfo.Columns);
+                result.UpdateRegisterSize(type, constant.RegIndex, constant.TypeInfo.Columns);
             }
 
             foreach (var (type, index, dest) in result.RegistersReferenced)
@@ -385,7 +378,7 @@ namespace ShaderDecompiler.Decompiler
                 string name = @base;
                 if (withIndex)
                     name += arg.UsageIndex;
-                
+
                 if (context.Shader.Constants.Any(c => c.Name == name))
                 {
                     name = "arg_" + @base;
@@ -439,7 +432,7 @@ namespace ShaderDecompiler.Decompiler
                     Expression? expr = context.Expressions[i];
                     if (expr is null)
                         continue;
- 
+
                     context.CurrentExpressionIndex = i;
                     context.CurrentExpressionExceedsWeight = expr.CalculateWeight() > context.SimplificationWeightThreshold;
                     if (context.CurrentExpressionExceedsWeight && !expr.SimplifyOnWeightExceeded)
@@ -453,7 +446,7 @@ namespace ShaderDecompiler.Decompiler
                 for (int i = 0; i < context.Expressions.Count; i++)
                 {
                     context.CurrentExpressionIndex = i;
-                    if (context.Expressions[i] is null || context.Expressions[i].Clean(context))
+                    if (context.Expressions[i] is null || context.Expressions[i]!.Clean(context))
                     {
                         context.Expressions.RemoveAt(i);
                         i--;
@@ -472,7 +465,7 @@ namespace ShaderDecompiler.Decompiler
                 for (int i = 0; i < context.Expressions.Count; i++)
                 {
                     context.CurrentExpressionIndex = i;
-                    if (context.Expressions[i].Clean(context))
+                    if (context.Expressions[i] is null || context.Expressions[i]!.Clean(context))
                     {
                         context.Expressions.RemoveAt(i);
                         i--;
@@ -481,7 +474,7 @@ namespace ShaderDecompiler.Decompiler
                 }
             }
         }
-        
+
         Expression? CreateExpression(Stack<Opcode> opcodes, ShaderDecompilationContext context)
         {
             Opcode op = opcodes.Pop();
@@ -499,13 +492,16 @@ namespace ShaderDecompiler.Decompiler
                 case OpcodeType.Def:
                     if (context.Scan.RegisterSizes.TryGetValue((op.Destination!.Value.RegisterType, op.Destination!.Value.Register), out uint size))
                         size = 4;
-                    float[] values = size == op.Constant!.Length ? op.Constant : op.Constant.Take((int)size).ToArray();
+                    ConstantExpression[] values = op.Constant!.Take((int)size).Select(v => new ConstantExpression(v)).ToArray();
+                    assign = ComplexExpression.Create<ValueCtorExpression>(values);
+                    break;
 
-                    assign = new ConstantExpression(values);
+                case OpcodeType.Rcp:
+                    assign = ComplexExpression.Create<DivisionExpression>(new ConstantExpression(1), op.Sources[0].ToExpr());
                     break;
 
                 case OpcodeType.Mul:
-                    assign = ComplexExpression.Create<MultiplyExpression>(op.Sources[0].ToExpr(), op.Sources[1].ToExpr());
+                    assign = ComplexExpression.Create<MultiplicationExpression>(op.Sources[0].ToExpr(), op.Sources[1].ToExpr());
                     break;
 
                 case OpcodeType.Mov:

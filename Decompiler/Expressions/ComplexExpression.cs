@@ -6,7 +6,7 @@ namespace ShaderDecompiler.Decompiler.Expressions
     public abstract class ComplexExpression : Expression
     {
         public Expression[] SubExpressions = Array.Empty<Expression>();
-        public abstract int ArgumentCount { get; }
+        public abstract ValueCheck<int> ArgumentCount { get; }
 
         static Stack<Expression> RegCheckStack = new();
 
@@ -16,7 +16,7 @@ namespace ShaderDecompiler.Decompiler.Expressions
                 Debugger.Break();
 
             T expr = new();
-            if (expr.ArgumentCount < 0 || expr.ArgumentCount != expressions.Length)
+            if (!expr.ArgumentCount.Check(expressions.Length))
                 throw new ArgumentException("Wrong parameter count", nameof(expressions));
             expr.SubExpressions = expressions;
             return expr;
@@ -73,7 +73,6 @@ namespace ShaderDecompiler.Decompiler.Expressions
             fail = true;
             return Clone();
         }
-
 
     }
 }
