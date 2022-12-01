@@ -93,6 +93,14 @@ namespace ShaderDecompiler.Decompiler.Expressions
             return swizzle.Count == 0;
         }
 
+        public IEnumerable<Swizzle> EnumerateSwizzles()
+        {
+            if (X.HasValue) yield return X.Value;
+            if (Y.HasValue) yield return Y.Value;
+            if (Z.HasValue) yield return Z.Value;
+            if (W.HasValue) yield return W.Value;
+        }
+
         public override Expression Simplify(ShaderDecompilationContext context, out bool fail)
         {
             fail = true;
@@ -118,27 +126,51 @@ namespace ShaderDecompiler.Decompiler.Expressions
 
             // If this register is used inbetween this expression and prevoius assignment (excluding current expression) to the register or end
             if (context.CurrentExpressionIndex > 0)
+            {
                 for (int i = context.CurrentExpressionIndex - 1; i >= 0; i--)
                 {
                     if (context.Expressions[i] is null)
                         continue;
 
-                    if (context.Expressions[i] is AssignExpression assign && assign.Destination.IsExactRegisterAs(this))
+                    
+
+                    if (context.Expressions[i] is AssignExpression assign)
                     {
-                        context.Expressions[i] = null;
-                        assignment = assign.Source;
-                        break;
+                        if (Type == ParameterRegisterType.Const && assign.Source is ValueCtorExpression ctor && assign.Destination.FullRegister)
+                        {
+                            List<Expression> values = new();
+
+                            foreach (Swizzle sw in EnumerateSwizzles())
+                                values.Add(ctor.SubExpressions[(int)sw]);
+
+                            if (values.Count > 0)
+                            {
+                                fail = false;
+
+                                if (values.Count == 1)
+                                    return values[0];
+                                return ComplexExpression.Create<ValueCtorExpression>(values.ToArray());
+                            }
+                        }
+
+                        if (assign.Destination.IsExactRegisterAs(this))
+                        {
+                            if (CheckWeightExceededWith(context, assign.Source))
+                                return this;
+
+                            context.Expressions[i] = null;
+                            assignment = assign.Source;
+                            break;
+                        }
                     }
 
                     if (i != context.CurrentExpressionIndex && context.Expressions[i]!.IsRegisterUsed(Type, Index, false))
                         return this;
                 }
+            }
 
             if (assignment is not null)
             {
-                if (context.Expressions[context.CurrentExpressionIndex]!.CalculateWeight() - CalculateWeight() + assignment.CalculateWeight() > context.SimplificationWeightThreshold)
-                    return this;
-
                 fail = false;
                 return assignment.Clone();
             }
@@ -161,6 +193,11 @@ namespace ShaderDecompiler.Decompiler.Expressions
         public override string ToString()
         {
             return $"{Type.ToString().ToLower()}{Index}.{X?.ToString().ToLower() ?? "_"}{Y?.ToString().ToLower() ?? "_"}{Z?.ToString().ToLower() ?? "_"}{W?.ToString().ToLower() ?? "_"}";
+        }
+
+        bool CheckWeightExceededWith(ShaderDecompilationContext context, Expression expr)
+        {
+            return context.Expressions[context.CurrentExpressionIndex]!.CalculateWeight() - CalculateWeight() + expr.CalculateWeight() > context.SimplificationWeightThreshold;
         }
     }
 }
