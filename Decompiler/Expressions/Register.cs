@@ -66,7 +66,7 @@ namespace ShaderDecompiler.Decompiler.Expressions
             fail = true;
 
             if (Destination)
-                return Clone();
+                return this;
 
             // If this register is used inbetween this expression and next assignment (including current expression) to the register or end
             for (int i = context.CurrentExpressionIndex; i < context.Expressions.Count; i++)
@@ -79,7 +79,7 @@ namespace ShaderDecompiler.Decompiler.Expressions
 
                 bool used = i != context.CurrentExpressionIndex && context.Expressions[i]!.IsRegisterUsed(Type, Index);
                 if (used)
-                    return Clone();
+                    return this;
             }
 
             Expression? assignment = null;
@@ -99,18 +99,18 @@ namespace ShaderDecompiler.Decompiler.Expressions
                     }
 
                     if (context.Expressions[i]!.IsRegisterUsed(Type, Index))
-                        return Clone();
+                        return this;
                 }
 
             if (assignment is not null)
             {
                 if (context.Expressions[context.CurrentExpressionIndex]!.CalculateWeight() - CalculateWeight() + assignment.CalculateWeight() > context.SimplificationWeightThreshold)
-                    return Clone();
+                    return this;
 
                 fail = false;
                 return assignment.Clone();
             }
-            return Clone();
+            return this;
         }
 
         public override Expression Clone()

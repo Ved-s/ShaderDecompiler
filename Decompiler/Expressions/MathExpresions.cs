@@ -35,8 +35,7 @@
 		}
 	}
 
-    public class DivisionExpression : MathOperationExpression
-    {
+    public class DivisionExpression : MathOperationExpression {
         public DivisionExpression() : base('/') {
 		}
     }

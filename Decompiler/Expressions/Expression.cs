@@ -13,7 +13,7 @@ namespace ShaderDecompiler.Decompiler.Expressions
         public virtual Expression Simplify(ShaderDecompilationContext context, out bool fail)
         {
             fail = true;
-            return Clone();
+            return this;
         }
         public virtual bool Clean(ShaderDecompilationContext context) => false;
 

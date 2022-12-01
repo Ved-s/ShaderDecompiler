@@ -71,7 +71,7 @@ namespace ShaderDecompiler.Decompiler.Expressions
         public virtual Expression SimplifySelf(ShaderDecompilationContext context, out bool fail)
         {
             fail = true;
-            return Clone();
+            return this;
         }
 
     }

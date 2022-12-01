@@ -488,7 +488,7 @@ namespace ShaderDecompiler.Decompiler
                 case OpcodeType.Comment:
                 case OpcodeType.Dcl:
                     return null;
-
+                    
                 case OpcodeType.Def:
                     if (context.Scan.RegisterSizes.TryGetValue((op.Destination!.Value.RegisterType, op.Destination!.Value.Register), out uint size))
                         size = 4;
