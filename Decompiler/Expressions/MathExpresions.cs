@@ -1,34 +1,29 @@
 ﻿namespace ShaderDecompiler.Decompiler.Expressions
 {
-    public abstract class MathExpressionExpression : ComplexExpression {
-		private readonly char sym;
+    public abstract class MathOperationExpression : ComplexExpression {
+		private readonly char Operation;
 
-		public MathExpressionExpression(char s) {
-			sym = s;
+		public MathOperationExpression(char operation) {
+			Operation = operation;
 		}
 
 		public Expression A => SubExpressions[0];
 		public Expression B => SubExpressions[1];
-		public override int ArgumentCount => 2;
+		public override ValueCheck<int> ArgumentCount => 2;
 
 		public override string Decompile(ShaderDecompilationContext context) {
-			return $"{A.Decompile(context)} {sym} {B.Decompile(context)}";
+
+			// TODO: Expression.NeedsParenthesesWrapping
+			bool needsParentheses = A is MathOperationExpression and not AdditionExpression and not MultiplicationExpression;
+
+			if (needsParentheses)
+                return $"({A.Decompile(context)}) {Operation} {B.Decompile(context)}";
+
+            return $"{A.Decompile(context)} {Operation} {B.Decompile(context)}";
 		}
 
 		public override string ToString() {
-			return $"{A} {sym} {B}";
-		}
-	}
-	public class MultiplyExpression : MathExpressionExpression {
-		public MultiplyExpression() : base('*') {
-		}
-	}
-	public class AddExpression : MathExpressionExpression {
-		public AddExpression() : base('+') {
-		}
-	}
-	public class SubstractExpression : MathExpressionExpression {
-		public SubstractExpression() : base('-') {
+			return $"({A}) {Operation} {B}";
 		}
 	}
 }

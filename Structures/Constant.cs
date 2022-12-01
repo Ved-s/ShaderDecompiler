@@ -35,7 +35,6 @@ public class Constant
                 if (size + memberActualSize > pos)
                     return GetTypeDefaultValue(member.Type, value, pos - size);
 
-
                 size += memberActualSize;
             }
         }
@@ -47,5 +46,4 @@ public class Constant
         return value.ToString();
     }
 }
-
 

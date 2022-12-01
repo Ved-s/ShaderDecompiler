@@ -10,33 +10,28 @@ namespace ShaderDecompiler.Decompiler.Expressions
 {
     public class ConstantExpression : Expression
     {
-        public readonly float[] Values;
+        public readonly float Value;
 
-        public ConstantExpression(float[] values)
+        public ConstantExpression(float value)
         {
-            Values = values;
+            Value = value;
         }
 
         public override string Decompile(ShaderDecompilationContext context)
         {
-            if (Values.Length == 1)
-                return Values[0].ToString(CultureInfo.InvariantCulture);
-
-            return $"float{Values.Length}({string.Join(", ", Values.Select(f => f.ToString(CultureInfo.InvariantCulture)))})";
+            return Value.ToString(CultureInfo.InvariantCulture);
         }
 
-        public override bool IsRegisterUsed(ParameterRegisterType type, uint index) => false;
+        public override bool IsRegisterUsed(ParameterRegisterType type, uint index, bool? destination) => false;
 
         public override string ToString()
         {
-            return $"float{Values.Length}({string.Join(", ", Values.Select(f => f.ToString(CultureInfo.InvariantCulture)))})";
+            return Value.ToString(CultureInfo.InvariantCulture);
         }
 
         public override Expression Clone()
         {
-            float[] copy = new float[Values.Length];
-            Array.Copy(Values, copy, Values.Length);
-            return new ConstantExpression(copy);
+            return new ConstantExpression(Value);
         }
     }
 }

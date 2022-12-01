@@ -2,7 +2,7 @@
 {
     public class AssignExpression : ComplexExpression
     {
-        public override int ArgumentCount => 2;
+        public override ValueCheck<int> ArgumentCount => 2;
 
         public RegisterExpression Destination => SubExpressions[0] as RegisterExpression ?? throw new InvalidDataException();
         public Expression Source => SubExpressions[1];
@@ -21,10 +21,20 @@
                 if (!context.Scan.RegisterSizes.TryGetValue((Destination.Type, Destination.Index), out uint size))
                     size = 4;
 
-                if (size > 1)
-                    type = "float" + size + " ";
+                if (!Destination.FullRegister)
+                {
+                    if (size > 1)
+                        type = $"float{size} {Destination.GetName(context)};\n";
+                    else
+                        type = $"float {Destination.GetName(context)};\n";
+                }
                 else
-                    type = "float ";
+                {
+                    if (size > 1)
+                        type = $"float{size} ";
+                    else
+                        type = "float ";
+                }
             }
 
             return $"{type}{Destination.Decompile(context)} = {Source.Decompile(context)}";
@@ -46,7 +56,7 @@
                 if (context.Expressions[i] is null)
                     continue;
 
-                bool used = i != context.CurrentExpressionIndex && context.Expressions[i].IsRegisterUsed(Destination.Type, Destination.Index);
+                bool used = i != context.CurrentExpressionIndex && context.Expressions[i].IsRegisterUsed(Destination.Type, Destination.Index, false);
                 if (used)
                     return false;
 

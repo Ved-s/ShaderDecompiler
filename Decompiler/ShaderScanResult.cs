@@ -1,8 +1,9 @@
 ﻿using ShaderDecompiler.Structures;
+using System.Diagnostics;
 
 namespace ShaderDecompiler.Decompiler
 {
-    public struct ShaderScanResult
+    public class ShaderScanResult
     { 
         public readonly List<ShaderArgument> Arguments = new();
         public readonly HashSet<(ParameterRegisterType type, uint index, bool dest)> RegistersReferenced = new();
@@ -31,7 +32,14 @@ namespace ShaderDecompiler.Decompiler
             }
             return arg;
         }
-    }
 
+        public void UpdateRegisterSize(ParameterRegisterType type, uint index, uint size)
+        {
+            if (!RegisterSizes.TryGetValue((type, index), out uint regMaxSize))
+                regMaxSize = 1;
+
+            RegisterSizes[(type, index)] = Math.Max(regMaxSize, size);
+        }
+    }
 
 }

@@ -168,7 +168,6 @@ namespace ShaderDecompiler
             if (Types.TryGetValue(position, out TypeInfo? cachedType))
                 return cachedType;
 
-
             long streamPos = reader.BaseStream.Position;
 
             try

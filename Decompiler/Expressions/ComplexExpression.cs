@@ -6,7 +6,7 @@ namespace ShaderDecompiler.Decompiler.Expressions
     public abstract class ComplexExpression : Expression
     {
         public Expression[] SubExpressions = Array.Empty<Expression>();
-        public abstract int ArgumentCount { get; }
+        public abstract ValueCheck<int> ArgumentCount { get; }
 
         static Stack<Expression> RegCheckStack = new();
 
@@ -16,19 +16,15 @@ namespace ShaderDecompiler.Decompiler.Expressions
                 Debugger.Break();
 
             T expr = new();
-            if (expr.ArgumentCount < 0 || expr.ArgumentCount != expressions.Length)
+            if (!expr.ArgumentCount.Check(expressions.Length))
                 throw new ArgumentException("Wrong parameter count", nameof(expressions));
             expr.SubExpressions = expressions;
             return expr;
         }
 
-        public override bool IsRegisterUsed(ParameterRegisterType type, uint index)
+        public override bool IsRegisterUsed(ParameterRegisterType type, uint index, bool? destination)
         {
-
-            RegCheckStack.Push(this);
-            bool res = SubExpressions.Any(expr => expr.IsRegisterUsed(type, index));
-            RegCheckStack.Pop();
-            return res;
+            return SubExpressions.Any(expr => expr.IsRegisterUsed(type, index, destination));
         }
 
         public sealed override Expression Simplify(ShaderDecompilationContext context, out bool fail)
@@ -66,14 +62,20 @@ namespace ShaderDecompiler.Decompiler.Expressions
             return 1 + SubExpressions.Sum(expr => expr.CalculateWeight());
         }
 
+        public override void MaskSwizzle(SwizzleMask mask)
+        {
+            for (int i = 0; i < SubExpressions.Length; i++)
+                SubExpressions[i].MaskSwizzle(ModifySubSwizzleMask(mask, i));
+        }
+
         public virtual ComplexExpression CloneSelf() => (ComplexExpression)Activator.CreateInstance(GetType())!;
 
         public virtual Expression SimplifySelf(ShaderDecompilationContext context, out bool fail)
         {
             fail = true;
-            return Clone();
+            return this;
         }
 
-
+        public virtual SwizzleMask ModifySubSwizzleMask(SwizzleMask mask, int subIndex) => mask;
     }
 }

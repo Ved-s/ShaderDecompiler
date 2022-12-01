@@ -9,7 +9,7 @@ namespace ShaderDecompiler.Decompiler.Expressions
     public class CallExpression : ComplexExpression
     {
         public string FunctionName = null!;
-        public override int ArgumentCount => -1;
+        public override ValueCheck<int> ArgumentCount => ValueCheck<int>.Any;
 
         public CallExpression(string functionName, params Expression[] arguments)
         {
