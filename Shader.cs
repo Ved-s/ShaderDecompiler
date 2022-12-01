@@ -17,7 +17,7 @@ namespace ShaderDecompiler {
 		public string? Target { get; private set; }
 
 		public static Shader Read(BinaryReader reader) {
-			Shader shader = new Shader {
+			Shader shader = new() {
 				Version = ShaderVersion.Read(reader)
 			};
 
@@ -108,7 +108,7 @@ namespace ShaderDecompiler {
 			for (int i = 0; i < constantsNum; i++) {
 				reader.BaseStream.Seek(start + constantsInfo + i * 20, SeekOrigin.Begin);
 
-				Constant constant = new Constant {
+				Constant constant = new() {
 					Name = ReadString(reader, start, length),
 					RegSet = (RegSet)reader.ReadUInt16(),
 					RegIndex = reader.ReadUInt16(),
