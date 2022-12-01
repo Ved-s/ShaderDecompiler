@@ -22,7 +22,7 @@ namespace ShaderDecompiler.Decompiler.Expressions
             return Value.ToString(CultureInfo.InvariantCulture);
         }
 
-        public override bool IsRegisterUsed(ParameterRegisterType type, uint index) => false;
+        public override bool IsRegisterUsed(ParameterRegisterType type, uint index, bool? destination) => false;
 
         public override string ToString()
         {

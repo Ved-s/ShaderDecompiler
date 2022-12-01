@@ -22,13 +22,9 @@ namespace ShaderDecompiler.Decompiler.Expressions
             return expr;
         }
 
-        public override bool IsRegisterUsed(ParameterRegisterType type, uint index)
+        public override bool IsRegisterUsed(ParameterRegisterType type, uint index, bool? destination)
         {
-
-            RegCheckStack.Push(this);
-            bool res = SubExpressions.Any(expr => expr.IsRegisterUsed(type, index));
-            RegCheckStack.Pop();
-            return res;
+            return SubExpressions.Any(expr => expr.IsRegisterUsed(type, index, destination));
         }
 
         public sealed override Expression Simplify(ShaderDecompilationContext context, out bool fail)
@@ -66,6 +62,12 @@ namespace ShaderDecompiler.Decompiler.Expressions
             return 1 + SubExpressions.Sum(expr => expr.CalculateWeight());
         }
 
+        public override void MaskSwizzle(SwizzleMask mask)
+        {
+            for (int i = 0; i < SubExpressions.Length; i++)
+                SubExpressions[i].MaskSwizzle(ModifySubSwizzleMask(mask, i));
+        }
+
         public virtual ComplexExpression CloneSelf() => (ComplexExpression)Activator.CreateInstance(GetType())!;
 
         public virtual Expression SimplifySelf(ShaderDecompilationContext context, out bool fail)
@@ -74,5 +76,6 @@ namespace ShaderDecompiler.Decompiler.Expressions
             return this;
         }
 
+        public virtual SwizzleMask ModifySubSwizzleMask(SwizzleMask mask, int subIndex) => mask;
     }
 }

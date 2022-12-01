@@ -56,7 +56,7 @@
                 if (context.Expressions[i] is null)
                     continue;
 
-                bool used = i != context.CurrentExpressionIndex && context.Expressions[i].IsRegisterUsed(Destination.Type, Destination.Index);
+                bool used = i != context.CurrentExpressionIndex && context.Expressions[i].IsRegisterUsed(Destination.Type, Destination.Index, false);
                 if (used)
                     return false;
 

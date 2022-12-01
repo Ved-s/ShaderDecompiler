@@ -1,5 +1,6 @@
 ﻿using ShaderDecompiler.Decompiler.Expressions;
 using ShaderDecompiler.Structures;
+using System.ComponentModel;
 
 namespace ShaderDecompiler.Decompiler
 {
@@ -47,5 +48,25 @@ namespace ShaderDecompiler.Decompiler
 
         public static AssignExpression Assign(this RegisterExpression regexpr, Expression expr) 
             => ComplexExpression.Create<AssignExpression>(regexpr, expr);
+
+        public static (TResult?, TArray?) GetTypeValue<TResult, TArray>(this TArray[] arr) where TResult : TArray
+        {
+            int index = -1;
+
+            for (int i = 0; i < arr.Length; i++)
+                if (arr[i] is TResult)
+                {
+                    index = i;
+                    break;
+                }
+
+            if (index < 0)
+                return (default, default);
+
+            int otherIndex = (index + 1) % arr.Length;
+            TArray? other = otherIndex == index ? default : arr[otherIndex];
+
+            return ((TResult)arr[index], other);
+        }
     }
 }

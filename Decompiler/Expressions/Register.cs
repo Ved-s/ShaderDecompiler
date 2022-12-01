@@ -1,19 +1,37 @@
 ﻿using ShaderDecompiler.Structures;
 using System.Diagnostics;
+using System.Diagnostics.Tracing;
 
 namespace ShaderDecompiler.Decompiler.Expressions
 {
     public class RegisterExpression : Expression
     {
-        public readonly ParameterRegisterType Type;
-        public readonly uint Index;
-        public readonly Swizzle? X;
-        public readonly Swizzle? Y;
-        public readonly Swizzle? Z;
-        public readonly Swizzle? W;
-        public readonly bool Destination;
+        public ParameterRegisterType Type;
+        public uint Index;
+        public Swizzle? X;
+        public Swizzle? Y;
+        public Swizzle? Z;
+        public Swizzle? W;
+        public bool Destination;
 
         public bool FullRegister => X == Swizzle.X && Y == Swizzle.Y && Z == Swizzle.Z && W == Swizzle.W;
+        public SwizzleMask WriteMask 
+        {
+            get 
+            {
+                if (!Destination)
+                    throw new InvalidOperationException("Register is not destination");
+
+                SwizzleMask mask = SwizzleMask.None;
+
+                if (X.HasValue) mask |= SwizzleMask.X;
+                if (Y.HasValue) mask |= SwizzleMask.Y;
+                if (Z.HasValue) mask |= SwizzleMask.Z;
+                if (W.HasValue) mask |= SwizzleMask.W;
+
+                return mask;
+            }
+        }
 
         public RegisterExpression(ParameterRegisterType type, uint index, Swizzle? x, Swizzle? y, Swizzle? z, Swizzle? w, bool destination)
         {
@@ -26,9 +44,9 @@ namespace ShaderDecompiler.Decompiler.Expressions
             Destination = destination;
         }
 
-        public override bool IsRegisterUsed(ParameterRegisterType type, uint index)
+        public override bool IsRegisterUsed(ParameterRegisterType type, uint index, bool? destination)
         {
-            return type == Type && index == Index;
+            return type == Type && index == Index && (destination is null || destination == Destination);
         }
 
         public override string Decompile(ShaderDecompilationContext context)
@@ -58,7 +76,21 @@ namespace ShaderDecompiler.Decompiler.Expressions
             if (!IsSameRegisterAs(expr))
                 return false;
 
-            return X == expr.X && Y == expr.Y && Z == expr.Z && W == expr.W;
+            HashSet<Swizzle> swizzle = new();
+
+            // did this, so a.z (Z___ swizzle) and a.z (___Z swizzle) count as same
+
+            if (X.HasValue) swizzle.Add(X.Value);
+            if (Y.HasValue) swizzle.Add(Y.Value);
+            if (Z.HasValue) swizzle.Add(Z.Value);
+            if (W.HasValue) swizzle.Add(W.Value);
+
+            if (expr.X.HasValue) swizzle.Remove(expr.X.Value);
+            if (expr.Y.HasValue) swizzle.Remove(expr.Y.Value);
+            if (expr.Z.HasValue) swizzle.Remove(expr.Z.Value);
+            if (expr.W.HasValue) swizzle.Remove(expr.W.Value);
+
+            return swizzle.Count == 0;
         }
 
         public override Expression Simplify(ShaderDecompilationContext context, out bool fail)
@@ -77,7 +109,7 @@ namespace ShaderDecompiler.Decompiler.Expressions
                 if (context.Expressions[i] is AssignExpression assign && assign.Destination.IsExactRegisterAs(this))
                     break;
 
-                bool used = i != context.CurrentExpressionIndex && context.Expressions[i]!.IsRegisterUsed(Type, Index);
+                bool used = i != context.CurrentExpressionIndex && context.Expressions[i]!.IsRegisterUsed(Type, Index, false);
                 if (used)
                     return this;
             }
@@ -98,7 +130,7 @@ namespace ShaderDecompiler.Decompiler.Expressions
                         break;
                     }
 
-                    if (context.Expressions[i]!.IsRegisterUsed(Type, Index))
+                    if (i != context.CurrentExpressionIndex && context.Expressions[i]!.IsRegisterUsed(Type, Index, false))
                         return this;
                 }
 
@@ -118,9 +150,17 @@ namespace ShaderDecompiler.Decompiler.Expressions
             return new RegisterExpression(Type, Index, X, Y, Z, W, Destination);
         }
 
+        public override void MaskSwizzle(SwizzleMask mask)
+        {
+            if (!mask.HasFlag(SwizzleMask.X)) X = null;
+            if (!mask.HasFlag(SwizzleMask.Y)) Y = null;
+            if (!mask.HasFlag(SwizzleMask.Z)) Z = null;
+            if (!mask.HasFlag(SwizzleMask.W)) W = null;
+        }
+
         public override string ToString()
         {
-            return $"{Type.ToString().ToLower()}{Index}.{X?.ToString().ToLower()}{Y?.ToString().ToLower()}{Z?.ToString().ToLower()}{W?.ToString().ToLower()}";
+            return $"{Type.ToString().ToLower()}{Index}.{X?.ToString().ToLower() ?? "_"}{Y?.ToString().ToLower() ?? "_"}{Z?.ToString().ToLower() ?? "_"}{W?.ToString().ToLower() ?? "_"}";
         }
     }
 }

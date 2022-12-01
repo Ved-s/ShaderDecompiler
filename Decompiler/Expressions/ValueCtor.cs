@@ -14,5 +14,10 @@ namespace ShaderDecompiler.Decompiler.Expressions
         {
             return $"float{SubExpressions.Length}({string.Join(", ", SubExpressions.Select(expr => expr.Decompile(context)))})";
         }
+
+        public override string ToString()
+        {
+            return $"float{SubExpressions.Length}({string.Join(", ", (object[])SubExpressions)})";
+        }
     }
 }

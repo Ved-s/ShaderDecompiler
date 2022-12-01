@@ -4,7 +4,7 @@ namespace ShaderDecompiler.Decompiler.Expressions
 {
     public abstract class Expression
     {
-        public abstract bool IsRegisterUsed(ParameterRegisterType type, uint index);
+        public abstract bool IsRegisterUsed(ParameterRegisterType type, uint index, bool? destination);
         public abstract string Decompile(ShaderDecompilationContext context);
         public abstract Expression Clone();
 
@@ -16,6 +16,8 @@ namespace ShaderDecompiler.Decompiler.Expressions
             return this;
         }
         public virtual bool Clean(ShaderDecompilationContext context) => false;
+
+        public virtual void MaskSwizzle(SwizzleMask mask) { }
 
         //public bool SafeSimplify(ShaderDecompilationContext context, out Expression result)
         //{

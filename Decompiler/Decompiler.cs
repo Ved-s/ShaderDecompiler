@@ -2,9 +2,6 @@
 using ShaderDecompiler.Structures;
 using System.Diagnostics;
 
-// TODO Truncate source swizzles to destination swizzle
-// temp0.xy = const1.xyzw + const2.xxxx -> temp0.xy = const1.xy + const2.xx
-
 // TODO Make register simplification smarter, accumulate used swizzles when scanning for used registers
 
 namespace ShaderDecompiler.Decompiler
@@ -417,6 +414,14 @@ namespace ShaderDecompiler.Decompiler
                 context.Expressions.Add(expr);
             }
 
+            foreach (Expression expr in context.Expressions)
+            {
+                if (expr is AssignExpression assign)
+                {
+                    assign.Source.MaskSwizzle(assign.Destination.WriteMask);
+                }
+            }
+
             bool canSimplify = true;
             List<int> removeIndexes = new();
             int cycle = -1;
@@ -500,10 +505,10 @@ namespace ShaderDecompiler.Decompiler
                     assign = ComplexExpression.Create<DivisionExpression>(new ConstantExpression(1), op.Sources[0].ToExpr());
                     break;
                 case OpcodeType.Add:
-					assign = ComplexExpression.Create<AddExpression>(op.Sources[0].ToExpr(), op.Sources[1].ToExpr());
+					assign = ComplexExpression.Create<AdditionExpression>(op.Sources[0].ToExpr(), op.Sources[1].ToExpr());
 					break;
 				case OpcodeType.Sub:
-					assign = ComplexExpression.Create<SubstractExpression>(op.Sources[0].ToExpr(), op.Sources[1].ToExpr());
+					assign = ComplexExpression.Create<SubstractionExpression>(op.Sources[0].ToExpr(), op.Sources[1].ToExpr());
 					break;
 				case OpcodeType.Mul:
                     assign = ComplexExpression.Create<MultiplicationExpression>(op.Sources[0].ToExpr(), op.Sources[1].ToExpr());
