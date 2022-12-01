@@ -1,22 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace ShaderDecompiler.Decompiler {
+	[Flags]
+	public enum SwizzleMask : byte {
+		None = 0,
 
-namespace ShaderDecompiler.Decompiler
-{
-    [Flags]
-    public enum SwizzleMask : byte
-    {
-        None = 0,
+		X = 1,
+		Y = 2,
+		Z = 4,
+		W = 8,
 
-        X = 1,
-        Y = 2,
-        Z = 4,
-        W = 8,
-
-        // TODO: complex expressions mask overrides for specific parameters
-        // dest.z = dp4(a.xyzw, b.xyzw) -> dp4(a.z, b.xyzw) (arg 0 -> dest mask, arg 1 -> full mask)
-    }
+		// TODO: complex expressions mask overrides for specific parameters
+		// dest.z = dp4(a.xyzw, b.xyzw) -> dp4(a.z, b.xyzw) (arg 0 -> dest mask, arg 1 -> full mask)
+	}
 }

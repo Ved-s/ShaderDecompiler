@@ -1,6 +1,5 @@
-﻿namespace ShaderDecompiler.Decompiler.Expressions
-{
-    public abstract class MathOperationExpression : ComplexExpression {
+﻿namespace ShaderDecompiler.Decompiler.Expressions {
+	public abstract class MathOperationExpression : ComplexExpression {
 		private readonly char Operation;
 
 		public MathOperationExpression(char operation) {
@@ -17,9 +16,9 @@
 			bool needsParentheses = A is MathOperationExpression and not AdditionExpression and not MultiplicationExpression;
 
 			if (needsParentheses)
-                return $"({A.Decompile(context)}) {Operation} {B.Decompile(context)}";
+				return $"({A.Decompile(context)}) {Operation} {B.Decompile(context)}";
 
-            return $"{A.Decompile(context)} {Operation} {B.Decompile(context)}";
+			return $"{A.Decompile(context)} {Operation} {B.Decompile(context)}";
 		}
 
 		public override string ToString() {
