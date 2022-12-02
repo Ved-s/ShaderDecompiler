@@ -172,7 +172,7 @@ namespace ShaderDecompiler.Decompiler.Expressions {
 		}
 
 		bool CheckWeightExceededWith(ShaderDecompilationContext context, Expression expr) {
-			return context.Expressions[context.CurrentExpressionIndex]!.CalculateWeight() - CalculateWeight() + expr.CalculateWeight() > context.SimplificationWeightThreshold;
+			return context.Expressions[context.CurrentExpressionIndex]!.CalculateComplexity() - CalculateComplexity() + expr.CalculateComplexity() > context.ComplexityThreshold;
 		}
 	}
 }

@@ -79,7 +79,7 @@ namespace ShaderDecompiler.Decompiler {
 								continue;
 
 							context.CurrentExpressionIndex = i;
-							Writer.Write(context.Expressions[i].Decompile(context));
+							Writer.Write(context.Expressions[i]!.Decompile(context));
 							Writer.Write(";");
 							Writer.NewLine();
 						}
@@ -364,7 +364,7 @@ namespace ShaderDecompiler.Decompiler {
 				context.Expressions.Add(expr);
 			}
 
-			foreach (Expression expr in context.Expressions) {
+			foreach (Expression? expr in context.Expressions) {
 				if (expr is AssignExpression assign) {
 					assign.Source.MaskSwizzle(assign.Destination.WriteMask);
 				}
@@ -385,8 +385,8 @@ namespace ShaderDecompiler.Decompiler {
 						continue;
 
 					context.CurrentExpressionIndex = i;
-					context.CurrentExpressionExceedsWeight = expr.CalculateWeight() > context.SimplificationWeightThreshold;
-					if (context.CurrentExpressionExceedsWeight && !expr.SimplifyOnWeightExceeded)
+					context.CurrentExpressionTooComplex = expr.CalculateComplexity() > context.ComplexityThreshold;
+					if (context.CurrentExpressionTooComplex && !expr.SimplifyOnComplexityExceeded)
 						continue;
 
 					context.Expressions[i] = expr.Simplify(context, out bool fail);

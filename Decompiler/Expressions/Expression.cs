@@ -6,7 +6,7 @@ namespace ShaderDecompiler.Decompiler.Expressions {
 		public abstract string Decompile(ShaderDecompilationContext context);
 		public abstract Expression Clone();
 
-		public virtual bool SimplifyOnWeightExceeded => false;
+		public virtual bool SimplifyOnComplexityExceeded => false;
 
 		public virtual Expression Simplify(ShaderDecompilationContext context, out bool fail) {
 			fail = true;
@@ -26,7 +26,7 @@ namespace ShaderDecompiler.Decompiler.Expressions {
 		//    return !fail;
 		//}
 
-		public virtual int CalculateWeight() => 1;
+		public virtual int CalculateComplexity() => 1;
 
 	}
 }

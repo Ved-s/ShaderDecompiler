@@ -30,6 +30,10 @@ public struct ShaderVersion {
 		return obj is ShaderVersion other && this == other;
 	}
 
+	public override int GetHashCode() {
+		return HashCode.Combine(PixelShader, Minor, Major);
+	}
+
 	public static bool operator ==(ShaderVersion a, ShaderVersion b) => a.PixelShader == b.PixelShader && a.Minor == b.Minor && a.Major == b.Major;
 	public static bool operator !=(ShaderVersion a, ShaderVersion b) => a.PixelShader != b.PixelShader || a.Minor != b.Minor || a.Major != b.Major;
 }

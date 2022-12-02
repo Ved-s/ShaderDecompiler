@@ -25,10 +25,10 @@ namespace ShaderDecompiler.Decompiler.Expressions {
 			fail = true;
 
 			for (int i = 0; i < SubExpressions.Length; i++) {
-				if (context.CurrentExpressionExceedsWeight && !SubExpressions[i].SimplifyOnWeightExceeded)
+				if (context.CurrentExpressionTooComplex && !SubExpressions[i].SimplifyOnComplexityExceeded)
 					continue;
 
-				if (CalculateWeight() + SubExpressions[i].CalculateWeight() < context.SimplificationWeightThreshold) {
+				if (CalculateComplexity() + SubExpressions[i].CalculateComplexity() < context.ComplexityThreshold) {
 					SubExpressions[i] = SubExpressions[i].Simplify(context, out bool exprFail);
 					fail &= exprFail;
 				}
@@ -47,8 +47,8 @@ namespace ShaderDecompiler.Decompiler.Expressions {
 			return expr;
 		}
 
-		public override int CalculateWeight() {
-			return 1 + SubExpressions.Sum(expr => expr.CalculateWeight());
+		public override int CalculateComplexity() {
+			return 1 + SubExpressions.Sum(expr => expr.CalculateComplexity());
 		}
 
 		public override void MaskSwizzle(SwizzleMask mask) {

@@ -9,9 +9,9 @@ namespace ShaderDecompiler.Decompiler {
 
 		public List<Expression?> Expressions = new();
 		public int CurrentExpressionIndex = 0;
-		public bool CurrentExpressionExceedsWeight = false;
+		public bool CurrentExpressionTooComplex = false;
 
-		public int SimplificationWeightThreshold = 15000;
+		public int ComplexityThreshold = 15000;
 
 		public ShaderDecompilationContext(Shader shader) {
 			Shader = shader;
