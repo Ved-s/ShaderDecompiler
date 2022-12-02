@@ -24,20 +24,17 @@ namespace ShaderDecompiler.Decompiler.Expressions {
 			return SubExpressions.Select(expr => expr.GetRegisterUsage(type, index, destination)).SafeAggregate((a, b) => a | b);
 		}
 
-		public sealed override Expression Simplify(ShaderDecompilationContext context, out bool fail) {
+		public sealed override Expression Simplify(ShaderDecompilationContext context, bool allowComplexityIncrease, out bool fail) {
 			fail = true;
 
 			for (int i = 0; i < SubExpressions.Length; i++) {
-				if (context.CurrentExpressionTooComplex && !SubExpressions[i].SimplifyOnComplexityExceeded)
-					continue;
+				bool tooComplex = CalculateComplexity() + SubExpressions[i].CalculateComplexity() > context.ComplexityThreshold;
 
-				if (CalculateComplexity() + SubExpressions[i].CalculateComplexity() < context.ComplexityThreshold) {
-					SubExpressions[i] = SubExpressions[i].Simplify(context, out bool exprFail);
-					fail &= exprFail;
-				}
+				SubExpressions[i] = SubExpressions[i].Simplify(context, allowComplexityIncrease && !tooComplex, out bool exprFail);
+				fail &= exprFail;
 			}
 
-			Expression expr = SimplifySelf(context, out bool selfFail);
+			Expression expr = SimplifySelf(context, allowComplexityIncrease, out bool selfFail);
 			fail &= selfFail;
 			return expr;
 		}
@@ -61,7 +58,7 @@ namespace ShaderDecompiler.Decompiler.Expressions {
 
 		public virtual ComplexExpression CloneSelf() => (ComplexExpression)Activator.CreateInstance(GetType())!;
 
-		public virtual Expression SimplifySelf(ShaderDecompilationContext context, out bool fail) {
+		public virtual Expression SimplifySelf(ShaderDecompilationContext context, bool allowComplexityIncrease, out bool fail) {
 			fail = true;
 			return this;
 		}

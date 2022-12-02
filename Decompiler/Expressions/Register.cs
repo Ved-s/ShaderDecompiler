@@ -82,10 +82,10 @@ namespace ShaderDecompiler.Decompiler.Expressions {
 			if (W.HasValue) yield return W.Value;
 		}
 
-		public override Expression Simplify(ShaderDecompilationContext context, out bool fail) {
+		public override Expression Simplify(ShaderDecompilationContext context, bool allowComplexityIncrease, out bool fail) {
 			fail = true;
 
-			if (Destination)
+			if (Destination || !allowComplexityIncrease)
 				return this;
 
 			// If this register is used inbetween this expression and next assignment (including current expression) to the register or end

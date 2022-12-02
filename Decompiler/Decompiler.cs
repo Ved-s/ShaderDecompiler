@@ -15,7 +15,7 @@ namespace ShaderDecompiler.Decompiler {
 
 			return dc.Writer.ToString();
 		}
-
+		
 		void Decompile() {
 			foreach (Parameter param in Effect.Parameters)
 				WriteNamedValue(param.Value);
@@ -287,8 +287,6 @@ namespace ShaderDecompiler.Decompiler {
 					RegSet.Sampler => ParameterRegisterType.Sampler,
 					_ => ParameterRegisterType.Const
 				};
-
-				result.UpdateRegisterSize(type, constant.RegIndex, constant.TypeInfo.Columns);
 			}
 
 			foreach (var (type, index, dest) in result.RegistersReferenced) {
@@ -368,6 +366,28 @@ namespace ShaderDecompiler.Decompiler {
 				}
 			}
 
+			foreach (var (type, index, _) in context.Scan.RegistersReferenced) {
+				context.Scan.RegisterSizes.Remove((type, index));
+			}
+
+			foreach (Expression? expr in context.Expressions) {
+				if (expr is null)
+					continue;
+
+				foreach (var (type, index, _) in context.Scan.RegistersReferenced) {
+					SwizzleMask mask = expr.GetRegisterUsage(type, index, null);
+					if (mask == SwizzleMask.None)
+						continue;
+
+					uint registerSize = mask.HasFlag(SwizzleMask.W) ? 4u 
+						              : mask.HasFlag(SwizzleMask.Z) ? 3u 
+									  : mask.HasFlag(SwizzleMask.Y) ? 2u
+									  : 1u;
+
+					context.Scan.UpdateRegisterSize(type, index, registerSize);
+				}
+			}
+
 			bool canSimplify = true;
 			List<int> removeIndexes = new();
 			int cycle = -1;
@@ -383,11 +403,9 @@ namespace ShaderDecompiler.Decompiler {
 						continue;
 
 					context.CurrentExpressionIndex = i;
-					context.CurrentExpressionTooComplex = expr.CalculateComplexity() > context.ComplexityThreshold;
-					if (context.CurrentExpressionTooComplex && !expr.SimplifyOnComplexityExceeded)
-						continue;
+					bool tooComplex = expr.CalculateComplexity() > context.ComplexityThreshold;
 
-					context.Expressions[i] = expr.Simplify(context, out bool fail);
+					context.Expressions[i] = expr.Simplify(context, !tooComplex, out bool fail);
 					if (!fail)
 						canSimplify = true;
 				}

@@ -3,7 +3,7 @@
 		public MultiplicationExpression() : base('*') {
 		}
 
-		public override Expression SimplifySelf(ShaderDecompilationContext context, out bool fail) {
+		public override Expression SimplifySelf(ShaderDecompilationContext context, bool allowComplexityIncrease, out bool fail) {
 			fail = true;
 
 			var (div, other) = SubExpressions.GetTypeValue<DivisionExpression, Expression>();

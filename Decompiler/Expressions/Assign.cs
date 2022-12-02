@@ -5,7 +5,6 @@
 		public RegisterExpression Destination => SubExpressions[0] as RegisterExpression ?? throw new InvalidDataException();
 		public Expression Source => SubExpressions[1];
 
-		public override bool SimplifyOnComplexityExceeded => true;
 		public override string Decompile(ShaderDecompilationContext context) {
 			bool needsType = context.Scan.Arguments.All(arg => arg.RegisterType != Destination.Type || arg.Register != Destination.Index)
 				&& (context.CurrentExpressionIndex == 0 || context.Expressions

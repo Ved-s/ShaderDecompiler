@@ -16,6 +16,14 @@
 			return $"{FunctionName}({string.Join(", ", SubExpressions.Select(arg => arg.Decompile(context)))})";
 		}
 
+		public override SwizzleMask ModifySubSwizzleMask(SwizzleMask mask, int subIndex) {
+
+			if (FunctionName == "tex2D" && subIndex == 1)
+				return SwizzleMask.X | SwizzleMask.Y;
+
+			return mask;
+		}
+
 		public override string ToString() {
 			return $"{FunctionName}({string.Join(", ", (object[])SubExpressions)})";
 		}

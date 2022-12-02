@@ -26,7 +26,7 @@ namespace ShaderDecompiler.Decompiler {
 			return arg;
 		}
 
-		public void UpdateRegisterSize(ParameterRegisterType type, uint index, uint size) {
+		public void UpdateRegisterSize(ParameterRegisterType type, uint index, uint size, bool @override = false) {
 			if (!RegisterSizes.TryGetValue((type, index), out uint regMaxSize))
 				regMaxSize = 1;
 
