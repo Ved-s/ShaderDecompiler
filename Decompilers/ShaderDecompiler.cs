@@ -36,8 +36,11 @@ namespace ShaderDecompiler.Decompilers {
 				if (!firstArg)
 					Writer.Write(",");
 
-				if (arg.Output)
-					Writer.WriteSpaced(arg.Input ? "inout" : "out");
+				bool input = Context.Scan.Arguments.Any(a => a.Input && a.Usage == arg.Usage && a.UsageIndex == arg.UsageIndex);
+				bool output = Context.Scan.Arguments.Any(a => a.Output && a.Usage == arg.Usage && a.UsageIndex == arg.UsageIndex);
+
+				if (output)
+					Writer.WriteSpaced(input ? "inout" : "out");
 
 				Writer.WriteSpaced("float");
 				uint argSize = arg.Size;
