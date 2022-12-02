@@ -2,7 +2,7 @@
 
 namespace ShaderDecompiler.Structures;
 
-public struct DestinationParameter {
+public class DestinationParameter {
 	public uint Register;
 	public ParameterRegisterType RegisterType;
 
@@ -11,7 +11,7 @@ public struct DestinationParameter {
 	public bool WriteZ;
 	public bool WriteW;
 
-	public static DestinationParameter Read(BinaryReader reader) {
+	public static DestinationParameter Read(BinaryReader reader, ShaderVersion version) {
 		DestinationParameter param = new();
 		BitNumber token = new(reader.ReadUInt32());
 
@@ -21,6 +21,12 @@ public struct DestinationParameter {
 		param.WriteY = token[17];
 		param.WriteZ = token[18];
 		param.WriteW = token[19];
+
+		if (param.RegisterType == ParameterRegisterType.Address && version.PixelShader is true)
+			param.RegisterType = ParameterRegisterType.Texture;
+
+		if (param.RegisterType == ParameterRegisterType.Output && version.PixelShader is false && version.Major < 3)
+			param.RegisterType = ParameterRegisterType.Texcrdout;
 
 		return param;
 	}

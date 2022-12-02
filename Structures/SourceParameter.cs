@@ -2,7 +2,7 @@
 
 namespace ShaderDecompiler.Structures;
 
-public partial struct SourceParameter {
+public class SourceParameter {
 	public static readonly Dictionary<ParameterRegisterType, string> RegisterTypeNames = new() {
 		[ParameterRegisterType.Temp] = "tmp",
 		[ParameterRegisterType.Input] = "arg",
@@ -26,7 +26,7 @@ public partial struct SourceParameter {
 	public Swizzle SwizzleZ;
 	public Swizzle SwizzleW;
 
-	public static SourceParameter Read(BinaryReader reader) {
+	public static SourceParameter Read(BinaryReader reader, ShaderVersion version) {
 		SourceParameter param = new();
 		BitNumber token = new(reader.ReadUInt32());
 
@@ -38,6 +38,12 @@ public partial struct SourceParameter {
 		param.SwizzleZ = (Swizzle)token[20..21];
 		param.SwizzleW = (Swizzle)token[22..23];
 		param.Modifier = (SourceModifier)token[24..27];
+
+		if (param.RegisterType == ParameterRegisterType.Address && version.PixelShader is true)
+			param.RegisterType = ParameterRegisterType.Texture;
+
+		if (param.RegisterType == ParameterRegisterType.Output && version.PixelShader is false && version.Major < 3)
+			param.RegisterType = ParameterRegisterType.Texcrdout;
 
 		return param;
 	}

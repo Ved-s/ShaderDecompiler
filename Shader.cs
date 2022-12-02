@@ -56,19 +56,21 @@ namespace ShaderDecompiler {
 						throw new NotImplementedException();
 					}
 					else if (op.Type == OpcodeType.Def) {
-						op.Destination = DestinationParameter.Read(reader);
+						op.Destination = DestinationParameter.Read(reader, Version);
 						op.Constant = new float[] { reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle() };
 					}
 					else if (op.Type == OpcodeType.Dcl) {
 						op.Extra = reader.ReadUInt32();
-						op.Destination = DestinationParameter.Read(reader);
+						op.Destination = DestinationParameter.Read(reader, Version);
 					}
 					else {
-						if (op.Length >= 1) op.Destination = DestinationParameter.Read(reader);
+						if (op.Length >= 1)
+							op.Destination = DestinationParameter.Read(reader, Version);
+
 						if (op.Length >= 2) {
 							op.Sources = new SourceParameter[op.Length - 1];
 							for (int i = 0; i < op.Sources.Length; i++)
-								op.Sources[i] = SourceParameter.Read(reader);
+								op.Sources[i] = SourceParameter.Read(reader, Version);
 						}
 					}
 				}

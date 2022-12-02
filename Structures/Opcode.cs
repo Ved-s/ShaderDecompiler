@@ -32,7 +32,7 @@ public struct Opcode {
 
 		bool hadParam = false;
 
-		if (Destination.HasValue) {
+		if (Destination is not null) {
 			sb.Append(' ');
 			sb.Append(Destination.ToString());
 			hadParam = true;

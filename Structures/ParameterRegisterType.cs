@@ -4,10 +4,8 @@
 		Input = 1,
 		Const = 2,
 		Address = 3,
-		Texture = 3,
 		Rastout = 4,
 		Attrout = 5,
-		Texcrdout = 6,
 		Output = 6,
 		Constint = 7,
 		Colorout = 8,
@@ -22,5 +20,9 @@
 		Misctype = 17,
 		Label = 18,
 		Predicate = 19,
+
+		// Assigned manually
+		Texcrdout = 106,
+		Texture = 103,
 	}
 }
