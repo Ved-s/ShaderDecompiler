@@ -24,7 +24,14 @@ namespace ShaderDecompiler.Decompilers {
 			Writer.Write("(");
 
 			bool firstArg = true;
+			HashSet<(DeclUsage, uint)> writtenUsages = new();
 			foreach (var arg in Context.Scan.Arguments) {
+
+				if (writtenUsages.Contains((arg.Usage, arg.UsageIndex)))
+					continue;
+
+				writtenUsages.Add((arg.Usage, arg.UsageIndex));
+
 				Writer.LastSpace = true;
 				if (!firstArg)
 					Writer.Write(",");
@@ -76,12 +83,17 @@ namespace ShaderDecompiler.Decompilers {
 					ShaderArgument arg;
 
 					switch (dest.RegisterType) {
+
+						case ParameterRegisterType.Texture when Shader.Version.PixelShader is true && Shader.Version.Major >= 3:
 						case ParameterRegisterType.Input:
 							arg = Context.Scan.GetArgument(dest.RegisterType, dest.Register);
 							arg.Usage = (DeclUsage)dcl[0..4];
 							arg.UsageIndex = dcl[16..19];
 							arg.Size = dest.WriteW ? 4u : dest.WriteZ ? 3u : dest.WriteY ? 2u : 1u;
 							arg.Input = true;
+
+							if (arg.Usage == DeclUsage.Position) // PixelShaders can't have position inputs
+								arg.Usage = DeclUsage.Color;
 							break;
 
 						case ParameterRegisterType.Output:
@@ -89,16 +101,15 @@ namespace ShaderDecompiler.Decompilers {
 							arg.Output = true;
 							break;
 
-						case ParameterRegisterType.Misctype:
-						case ParameterRegisterType.Sampler:
-							break;
-
-						case ParameterRegisterType.Address:
 						case ParameterRegisterType.Texture:
+							arg = Context.Scan.GetArgument(dest.RegisterType, dest.Register);
+							arg.Usage = DeclUsage.Texcoord;
+							arg.UsageIndex = dest.Register;
+							arg.Size = dest.WriteW ? 4u : dest.WriteZ ? 3u : dest.WriteY ? 2u : 1u;
+							arg.Input = true;
 							break;
 
 						default:
-							Debugger.Break();
 							break;
 					}
 				}
