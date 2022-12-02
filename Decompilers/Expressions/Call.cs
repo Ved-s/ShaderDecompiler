@@ -1,4 +1,4 @@
-﻿namespace ShaderDecompiler.Decompiler.Expressions {
+﻿namespace ShaderDecompiler.Decompilers.Expressions {
 	public class CallExpression : ComplexExpression {
 		public string FunctionName = null!;
 		public override ValueCheck<int> ArgumentCount => ValueCheck<int>.Any;

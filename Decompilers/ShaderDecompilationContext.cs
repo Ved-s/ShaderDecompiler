@@ -1,7 +1,7 @@
-﻿using ShaderDecompiler.Decompiler.Expressions;
+﻿using ShaderDecompiler.Decompilers.Expressions;
 using ShaderDecompiler.Structures;
 
-namespace ShaderDecompiler.Decompiler {
+namespace ShaderDecompiler.Decompilers {
 	public class ShaderDecompilationContext {
 		public Shader Shader;
 		public Dictionary<(ParameterRegisterType, uint), string> RegisterNames = new();

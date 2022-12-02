@@ -1,6 +1,6 @@
 ﻿using ShaderDecompiler.Structures;
 
-namespace ShaderDecompiler.Decompiler {
+namespace ShaderDecompiler.Decompilers {
 	public class ShaderArgument {
 		public ParameterRegisterType RegisterType;
 		public uint Register;

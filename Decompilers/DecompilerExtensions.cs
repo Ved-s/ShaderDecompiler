@@ -1,7 +1,7 @@
-﻿using ShaderDecompiler.Decompiler.Expressions;
+﻿using ShaderDecompiler.Decompilers.Expressions;
 using ShaderDecompiler.Structures;
 
-namespace ShaderDecompiler.Decompiler {
+namespace ShaderDecompiler.Decompilers {
 	public static class DecompilerExtensions {
 		public static RegisterExpression ToExpr(this DestinationParameter dest) {
 			return new RegisterExpression(

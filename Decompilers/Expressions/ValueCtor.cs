@@ -1,4 +1,4 @@
-﻿namespace ShaderDecompiler.Decompiler.Expressions {
+﻿namespace ShaderDecompiler.Decompilers.Expressions {
 	public class ValueCtorExpression : ComplexExpression {
 		public override ValueCheck<int> ArgumentCount => new(v => v > 0 && v <= 4);
 

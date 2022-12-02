@@ -1,6 +1,6 @@
 ﻿using ShaderDecompiler.Structures;
 
-namespace ShaderDecompiler.Decompiler {
+namespace ShaderDecompiler.Decompilers {
 	public class ShaderScanResult {
 		public readonly List<ShaderArgument> Arguments = new();
 		public readonly HashSet<(ParameterRegisterType type, uint index, bool dest)> RegistersReferenced = new();

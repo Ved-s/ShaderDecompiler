@@ -1,7 +1,7 @@
 ﻿using ShaderDecompiler.Structures;
 using System.Diagnostics;
 
-namespace ShaderDecompiler.Decompiler.Expressions {
+namespace ShaderDecompiler.Decompilers.Expressions {
 	public abstract class ComplexExpression : Expression {
 		public Expression[] SubExpressions = Array.Empty<Expression>();
 		public abstract ValueCheck<int> ArgumentCount { get; }

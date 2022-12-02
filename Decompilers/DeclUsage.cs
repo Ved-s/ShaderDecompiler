@@ -1,4 +1,4 @@
-﻿namespace ShaderDecompiler.Decompiler {
+﻿namespace ShaderDecompiler.Decompilers {
 	public enum DeclUsage : uint {
 		Position = 0,
 		BlendWeight = 1,

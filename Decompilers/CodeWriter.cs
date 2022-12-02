@@ -1,6 +1,6 @@
 ﻿using System.Text;
 
-namespace ShaderDecompiler.Decompiler {
+namespace ShaderDecompiler.Decompilers {
 	public class CodeWriter {
 		public StringBuilder Builder = new();
 

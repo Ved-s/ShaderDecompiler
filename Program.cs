@@ -1,4 +1,4 @@
-﻿using ShaderDecompiler.Decompiler;
+﻿using ShaderDecompiler.Decompilers;
 
 namespace ShaderDecompiler;
 

@@ -1,4 +1,4 @@
-﻿namespace ShaderDecompiler.Decompiler {
+﻿namespace ShaderDecompiler.Decompilers {
 	[Flags]
 	public enum SwizzleMask : byte {
 		None = 0,

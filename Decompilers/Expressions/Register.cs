@@ -1,6 +1,6 @@
 ﻿using ShaderDecompiler.Structures;
 
-namespace ShaderDecompiler.Decompiler.Expressions {
+namespace ShaderDecompiler.Decompilers.Expressions {
 	public class RegisterExpression : Expression {
 		public ParameterRegisterType Type;
 		public uint Index;

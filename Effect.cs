@@ -20,28 +20,28 @@ namespace ShaderDecompiler {
 				magic = reader.ReadUInt32();
 			}
 
-			if (magic == 0xfeff0901) // HLSL Effect
-			{
-				Effect effect = new();
-				effect.LoadHLSL(reader);
-				return effect;
-			}
+			if (magic != 0xfeff0901)
+				throw new NotEffectDataException();
 
-			uint type = (magic & 0xffff0000) >> 16;
-			reader.BaseStream.Seek(-4, SeekOrigin.Current);
+			Effect effect = new();
+			effect.LoadEffect(reader);
+			return effect;
 
-			if (type == 0xffff) // only PixelShader
-			{
-				throw new NotImplementedException();
-			}
-			else if (type == 0xfffe) // only VertexShader
-			{
-				throw new NotImplementedException();
-			}
-			else throw new InvalidDataException();
+			//uint type = (magic & 0xffff0000) >> 16;
+			//reader.BaseStream.Seek(-4, SeekOrigin.Current);
+			//
+			//if (type == 0xffff) // only PixelShader
+			//{
+			//	throw new NotImplementedException();
+			//}
+			//else if (type == 0xfffe) // only VertexShader
+			//{
+			//	throw new NotImplementedException();
+			//}
+			//else throw new InvalidDataException();
 		}
 
-		void LoadHLSL(BinaryReader reader) {
+		void LoadEffect(BinaryReader reader) {
 			Reader = reader;
 			uint offset = reader.ReadUInt32();
 
@@ -361,6 +361,10 @@ namespace ShaderDecompiler {
 				return null;
 
 			return Encoding.ASCII.GetString(Reader.ReadBytes((int)length - 1));
+		}
+
+		public class NotEffectDataException : Exception {
+
 		}
 	}
 }

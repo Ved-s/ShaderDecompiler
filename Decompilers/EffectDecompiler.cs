@@ -1,8 +1,8 @@
-﻿using ShaderDecompiler.Decompiler.Expressions;
+﻿using ShaderDecompiler.Decompilers.Expressions;
 using ShaderDecompiler.Structures;
 using System.Diagnostics;
 
-namespace ShaderDecompiler.Decompiler {
+namespace ShaderDecompiler.Decompilers {
 	public class EffectDecompiler {
 		CodeWriter Writer = new();
 		Effect Effect;

@@ -1,7 +1,7 @@
 ﻿using ShaderDecompiler.Structures;
 using System.Globalization;
 
-namespace ShaderDecompiler.Decompiler.Expressions {
+namespace ShaderDecompiler.Decompilers.Expressions {
 	public class ConstantExpression : Expression {
 		public readonly float Value;
 

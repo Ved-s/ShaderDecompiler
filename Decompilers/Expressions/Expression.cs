@@ -1,6 +1,6 @@
 ﻿using ShaderDecompiler.Structures;
 
-namespace ShaderDecompiler.Decompiler.Expressions {
+namespace ShaderDecompiler.Decompilers.Expressions {
 	public abstract class Expression {
 
 		public abstract string Decompile(ShaderDecompilationContext context);

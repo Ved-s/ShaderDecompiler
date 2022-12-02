@@ -1,4 +1,4 @@
-﻿namespace ShaderDecompiler.Decompiler {
+﻿namespace ShaderDecompiler.Decompilers {
 	public struct ValueCheck<T> {
 		readonly Func<T?, bool>? CheckDelegate;
 		readonly T? ConstantValue;

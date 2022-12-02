@@ -1,4 +1,4 @@
-﻿namespace ShaderDecompiler.Decompiler.Expressions {
+﻿namespace ShaderDecompiler.Decompilers.Expressions {
 	public abstract class MathOperationExpression : ComplexExpression {
 		private readonly char Operation;
 

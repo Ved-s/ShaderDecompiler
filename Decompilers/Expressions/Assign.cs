@@ -1,4 +1,4 @@
-﻿namespace ShaderDecompiler.Decompiler.Expressions {
+﻿namespace ShaderDecompiler.Decompilers.Expressions {
 	public class AssignExpression : ComplexExpression {
 		public override ValueCheck<int> ArgumentCount => 2;
 

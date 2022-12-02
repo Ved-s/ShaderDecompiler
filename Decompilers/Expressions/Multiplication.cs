@@ -1,4 +1,4 @@
-﻿namespace ShaderDecompiler.Decompiler.Expressions {
+﻿namespace ShaderDecompiler.Decompilers.Expressions {
 	public class MultiplicationExpression : MathOperationExpression {
 		public MultiplicationExpression() : base('*') {
 		}

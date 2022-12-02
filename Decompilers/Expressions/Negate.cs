@@ -1,4 +1,4 @@
-﻿namespace ShaderDecompiler.Decompiler.Expressions {
+﻿namespace ShaderDecompiler.Decompilers.Expressions {
 	public class NegateExpression : ComplexExpression {
 		public Expression Expression => SubExpressions[0];
 		public override ValueCheck<int> ArgumentCount => 1;
