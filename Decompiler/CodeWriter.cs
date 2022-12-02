@@ -73,5 +73,11 @@ namespace ShaderDecompiler.Decompiler {
 		public override string ToString() {
 			return Builder.ToString();
 		}
+
+		public void Clear() {
+			Builder.Clear();
+			LineStart = true;
+			LastSpace = true;
+		}
 	}
 }

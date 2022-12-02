@@ -3,20 +3,17 @@ using ShaderDecompiler.Structures;
 using System.Diagnostics;
 
 namespace ShaderDecompiler.Decompiler {
-	public class Decompiler {
+	public class EffectDecompiler {
 		CodeWriter Writer = new();
-		HLSLEffect Effect = null!;
+		Effect Effect;
 
-		public static string DecompieEffect(HLSLEffect effect) {
-			Decompiler dc = new() {
-				Effect = effect
-			};
-			dc.Decompile();
-
-			return dc.Writer.ToString();
+		public EffectDecompiler(Effect effect) {
+			Effect = effect;
 		}
-		
-		void Decompile() {
+
+		public string Decompile() {
+			Writer.Clear();
+
 			foreach (Parameter param in Effect.Parameters)
 				WriteNamedValue(param.Value);
 
@@ -34,55 +31,9 @@ namespace ShaderDecompiler.Decompiler {
 							continue;
 						}
 
-						ShaderDecompilationContext context = new(shader) { Scan = ScanShader(shader) };
-
-						CreateShaderRegisterNames(context);
-
-						Writer.WriteSpaced("void");
-						Writer.WriteSpaced(state.Name);
-						Writer.Write("(");
-
-						bool firstArg = true;
-						foreach (var arg in context.Scan.Arguments) {
-							Writer.LastSpace = true;
-							if (!firstArg)
-								Writer.Write(",");
-
-							if (arg.Output)
-								Writer.WriteSpaced(arg.Input ? "inout" : "out");
-
-							Writer.WriteSpaced("float");
-							uint argSize = arg.Size;
-							if (context.Scan.RegisterSizes.TryGetValue((arg.RegisterType, arg.Register), out uint regSize))
-								argSize = Math.Max(argSize, regSize);
-							if (argSize > 1)
-								Writer.Write(argSize.ToString());
-							Writer.WriteSpaced(context.RegisterNames[(arg.RegisterType, arg.Register)]);
-							Writer.WriteSpaced(":");
-							Writer.WriteSpaced(arg.Usage.ToString().ToUpper());
-							Writer.Write(arg.UsageIndex.ToString());
-
-							firstArg = false;
-						}
-						Writer.Write(")");
-						Writer.NewLine();
-
-						Writer.StartBlock("{", "}");
-						Writer.NewLine();
-
-						CreateExpressionList(context);
-
-						for (int i = 0; i < context.Expressions.Count; i++) {
-							if (context.Expressions[i] is null)
-								continue;
-
-							context.CurrentExpressionIndex = i;
-							Writer.Write(context.Expressions[i]!.Decompile(context));
-							Writer.Write(";");
-							Writer.NewLine();
-						}
-
-						Writer.EndBlock();
+						ShaderDecompiler decompiler = new(shader);
+						decompiler.Decompile(Writer, state.Name);
+						
 						Writer.NewLine();
 						Writer.NewLine();
 					}
@@ -123,6 +74,8 @@ namespace ShaderDecompiler.Decompiler {
 				Writer.EndBlock();
 				Writer.NewLine();
 			}
+
+			return Writer.ToString();
 		}
 
 		void WriteNamedValue(Value value) {
@@ -210,10 +163,76 @@ namespace ShaderDecompiler.Decompiler {
 			return true;
 		}
 
-		ShaderScanResult ScanShader(Shader shader) {
-			ShaderScanResult result = new();
+		
+	}
 
-			foreach (Opcode op in shader.Opcodes) {
+	public class ShaderDecompiler {
+		CodeWriter Writer = null!;
+		Shader Shader = null!;
+		ShaderDecompilationContext Context = null!;
+
+		public ShaderDecompiler(Shader shader) {
+			Shader = shader;
+			
+		}
+
+		public void Decompile(CodeWriter writer, string entryPointName) {
+			Writer = writer;
+			Context = new(Shader);
+
+			ScanShader();
+			CreateShaderRegisterNames();
+
+			Writer.WriteSpaced("void");
+			Writer.WriteSpaced(entryPointName);
+			Writer.Write("(");
+
+			bool firstArg = true;
+			foreach (var arg in Context.Scan.Arguments) {
+				Writer.LastSpace = true;
+				if (!firstArg)
+					Writer.Write(",");
+
+				if (arg.Output)
+					Writer.WriteSpaced(arg.Input ? "inout" : "out");
+
+				Writer.WriteSpaced("float");
+				uint argSize = arg.Size;
+				if (Context.Scan.RegisterSizes.TryGetValue((arg.RegisterType, arg.Register), out uint regSize))
+					argSize = Math.Max(argSize, regSize);
+				if (argSize > 1)
+					Writer.Write(argSize.ToString());
+				Writer.WriteSpaced(Context.RegisterNames[(arg.RegisterType, arg.Register)]);
+				Writer.WriteSpaced(":");
+				Writer.WriteSpaced(arg.Usage.ToString().ToUpper());
+				Writer.Write(arg.UsageIndex.ToString());
+
+				firstArg = false;
+			}
+			Writer.Write(")");
+			Writer.NewLine();
+
+			Writer.StartBlock("{", "}");
+			Writer.NewLine();
+
+			CreateExpressionList();
+
+			for (int i = 0; i < Context.Expressions.Count; i++) {
+				if (Context.Expressions[i] is null)
+					continue;
+
+				Context.CurrentExpressionIndex = i;
+				Writer.Write(Context.Expressions[i]!.Decompile(Context));
+				Writer.Write(";");
+				Writer.NewLine();
+			}
+
+			Writer.EndBlock();
+		}
+
+		void ScanShader() {
+
+			foreach (Opcode op in Shader.Opcodes) {
 				if (op.Type == OpcodeType.Dcl && op.Extra.HasValue && op.Destination.HasValue) {
 					BitNumber dcl = new(op.Extra.Value);
 					DestinationParameter dest = op.Destination.Value;
@@ -222,7 +241,7 @@ namespace ShaderDecompiler.Decompiler {
 
 					switch (dest.RegisterType) {
 						case ParameterRegisterType.Input:
-							arg = result.GetArgument(dest.RegisterType, dest.Register);
+							arg = Context.Scan.GetArgument(dest.RegisterType, dest.Register);
 							arg.Usage = (DeclUsage)dcl[0..4];
 							arg.UsageIndex = dcl[16..19];
 							arg.Size = dest.WriteW ? 4u : dest.WriteZ ? 3u : dest.WriteY ? 2u : 1u;
@@ -230,7 +249,7 @@ namespace ShaderDecompiler.Decompiler {
 							break;
 
 						case ParameterRegisterType.Output:
-							arg = result.GetArgument(dest.RegisterType, dest.Register);
+							arg = Context.Scan.GetArgument(dest.RegisterType, dest.Register);
 							arg.Output = true;
 							break;
 
@@ -247,62 +266,60 @@ namespace ShaderDecompiler.Decompiler {
 				if (op.Destination.HasValue) {
 					DestinationParameter dest = op.Destination.Value;
 
-					result.RegistersReferenced.Add((dest.RegisterType, dest.Register, true));
+					Context.Scan.RegistersReferenced.Add((dest.RegisterType, dest.Register, true));
 
 					uint registerSize = dest.WriteW ? 4u : dest.WriteZ ? 3u : dest.WriteY ? 2u : 1u;
 
 					switch (dest.RegisterType) {
 						case ParameterRegisterType.Output:
 						case ParameterRegisterType.Attrout:
-							var arg = result.GetArgument(dest.RegisterType, dest.Register);
+							var arg = Context.Scan.GetArgument(dest.RegisterType, dest.Register);
 							arg.Output = true;
 							arg.Size = Math.Max(arg.Size, registerSize);
 							break;
 					}
 
-					result.UpdateRegisterSize(dest.RegisterType, dest.Register, registerSize);
+					Context.Scan.UpdateRegisterSize(dest.RegisterType, dest.Register, registerSize);
 				}
 
 				foreach (SourceParameter? src in op.Sources) {
 					if (!src.HasValue)
 						continue;
 
-					result.RegistersReferenced.Add((src.Value.RegisterType, src.Value.Register, false));
+					Context.Scan.RegistersReferenced.Add((src.Value.RegisterType, src.Value.Register, false));
 
 					switch (src.Value.RegisterType) {
 						case ParameterRegisterType.Input:
-							result.GetArgument(src.Value.RegisterType, src.Value.Register).Input = true;
+							Context.Scan.GetArgument(src.Value.RegisterType, src.Value.Register).Input = true;
 							break;
 					}
 
 					Swizzle maxSwizzle = (Swizzle)Math.Max(Math.Max((int)src.Value.SwizzleX, (int)src.Value.SwizzleY), Math.Max((int)src.Value.SwizzleZ, (int)src.Value.SwizzleW));
 					uint registerSize = (uint)maxSwizzle + 1;
 
-					result.UpdateRegisterSize(src.Value.RegisterType, src.Value.Register, registerSize);
+					Context.Scan.UpdateRegisterSize(src.Value.RegisterType, src.Value.Register, registerSize);
 				}
 			}
 
-			foreach (Constant constant in shader.Constants) {
+			foreach (Constant constant in Shader.Constants) {
 				ParameterRegisterType type = constant.RegSet switch {
 					RegSet.Sampler => ParameterRegisterType.Sampler,
 					_ => ParameterRegisterType.Const
 				};
 			}
 
-			foreach (var (type, index, dest) in result.RegistersReferenced) {
+			foreach (var (type, index, dest) in Context.Scan.RegistersReferenced) {
 				if (dest && type == ParameterRegisterType.Colorout) {
-					ShaderArgument arg = result.GetArgument(ParameterRegisterType.Colorout, index);
+					ShaderArgument arg = Context.Scan.GetArgument(ParameterRegisterType.Colorout, index);
 					arg.Output = true;
 					arg.Usage = DeclUsage.Color;
 					arg.UsageIndex = index;
 				}
 			}
-
-			return result;
 		}
 
-		void CreateShaderRegisterNames(ShaderDecompilationContext context) {
-			foreach (var arg in context.Scan.Arguments) {
+		void CreateShaderRegisterNames() {
+			foreach (var arg in Context.Scan.Arguments) {
 				string @base = arg.Usage switch {
 					DeclUsage.Position => "pos",
 					DeclUsage.BlendWeight => "blweight",
@@ -321,70 +338,70 @@ namespace ShaderDecompiler.Decompiler {
 					_ => "x"
 				};
 
-				bool withIndex = context.Scan.Arguments.Any(inp => inp.Usage == arg.Usage && inp.UsageIndex != arg.UsageIndex);
+				bool withIndex = Context.Scan.Arguments.Any(inp => inp.Usage == arg.Usage && inp.UsageIndex != arg.UsageIndex);
 
 				string name = @base;
 				if (withIndex)
 					name += arg.UsageIndex;
 
-				if (context.Shader.Constants.Any(c => c.Name == name)) {
+				if (Context.Shader.Constants.Any(c => c.Name == name)) {
 					name = "arg_" + @base;
 					if (withIndex)
 						name += arg.UsageIndex;
 				}
 
-				context.RegisterNames[(arg.RegisterType, arg.Register)] = name;
+				Context.RegisterNames[(arg.RegisterType, arg.Register)] = name;
 			}
 
-			foreach (Constant constant in context.Shader.Constants) {
+			foreach (Constant constant in Context.Shader.Constants) {
 				ParameterRegisterType type = constant.RegSet switch {
 					RegSet.Sampler => ParameterRegisterType.Sampler,
 					_ => ParameterRegisterType.Const
 				};
 
-				context.RegisterNames[(type, constant.RegIndex)] = constant.Name!;
+				Context.RegisterNames[(type, constant.RegIndex)] = constant.Name!;
 			}
 		}
 
-		void CreateExpressionList(ShaderDecompilationContext context) {
+		void CreateExpressionList() {
 			Stack<Opcode> opcodes = new();
 
-			for (int i = context.Shader.Opcodes.Count - 1; i > 0; i--)
-				opcodes.Push(context.Shader.Opcodes[i]);
+			for (int i = Context.Shader.Opcodes.Count - 1; i > 0; i--)
+				opcodes.Push(Context.Shader.Opcodes[i]);
 
 			while (opcodes.Count > 0) {
-				Expression? expr = CreateExpression(opcodes, context);
+				Expression? expr = CreateExpression(opcodes);
 				if (expr is null)
 					continue;
 
-				context.Expressions.Add(expr);
+				Context.Expressions.Add(expr);
 			}
 
-			foreach (Expression? expr in context.Expressions) {
+			foreach (Expression? expr in Context.Expressions) {
 				if (expr is AssignExpression assign) {
 					assign.Source.MaskSwizzle(assign.Destination.WriteMask);
 				}
 			}
 
-			foreach (var (type, index, _) in context.Scan.RegistersReferenced) {
-				context.Scan.RegisterSizes.Remove((type, index));
+			foreach (var (type, index, _) in Context.Scan.RegistersReferenced) {
+				Context.Scan.RegisterSizes.Remove((type, index));
 			}
 
-			foreach (Expression? expr in context.Expressions) {
+			foreach (Expression? expr in Context.Expressions) {
 				if (expr is null)
 					continue;
 
-				foreach (var (type, index, _) in context.Scan.RegistersReferenced) {
+				foreach (var (type, index, _) in Context.Scan.RegistersReferenced) {
 					SwizzleMask mask = expr.GetRegisterUsage(type, index, null);
 					if (mask == SwizzleMask.None)
 						continue;
 
-					uint registerSize = mask.HasFlag(SwizzleMask.W) ? 4u 
-						              : mask.HasFlag(SwizzleMask.Z) ? 3u 
+					uint registerSize = mask.HasFlag(SwizzleMask.W) ? 4u
+									  : mask.HasFlag(SwizzleMask.Z) ? 3u
 									  : mask.HasFlag(SwizzleMask.Y) ? 2u
 									  : 1u;
 
-					context.Scan.UpdateRegisterSize(type, index, registerSize);
+					Context.Scan.UpdateRegisterSize(type, index, registerSize);
 				}
 			}
 
@@ -393,27 +410,27 @@ namespace ShaderDecompiler.Decompiler {
 			int cycle = -1;
 			while (canSimplify) {
 				cycle++;
-				Console.WriteLine($"Simplification cycle {cycle}: {context.Expressions.Count} expressions");
+				Console.WriteLine($"Simplification cycle {cycle}: {Context.Expressions.Count} expressions");
 
 				canSimplify = false;
 				removeIndexes.Clear();
-				for (int i = 0; i < context.Expressions.Count; i++) {
-					Expression? expr = context.Expressions[i];
+				for (int i = 0; i < Context.Expressions.Count; i++) {
+					Expression? expr = Context.Expressions[i];
 					if (expr is null)
 						continue;
 
-					context.CurrentExpressionIndex = i;
-					bool tooComplex = expr.CalculateComplexity() > context.ComplexityThreshold;
+					Context.CurrentExpressionIndex = i;
+					bool tooComplex = expr.CalculateComplexity() > Context.ComplexityThreshold;
 
-					context.Expressions[i] = expr.Simplify(context, !tooComplex, out bool fail);
+					Context.Expressions[i] = expr.Simplify(Context, !tooComplex, out bool fail);
 					if (!fail)
 						canSimplify = true;
 				}
 
-				for (int i = 0; i < context.Expressions.Count; i++) {
-					context.CurrentExpressionIndex = i;
-					if (context.Expressions[i] is null || context.Expressions[i]!.Clean(context)) {
-						context.Expressions.RemoveAt(i);
+				for (int i = 0; i < Context.Expressions.Count; i++) {
+					Context.CurrentExpressionIndex = i;
+					if (Context.Expressions[i] is null || Context.Expressions[i]!.Clean(Context)) {
+						Context.Expressions.RemoveAt(i);
 						i--;
 					}
 				}
@@ -424,12 +441,12 @@ namespace ShaderDecompiler.Decompiler {
 			while (canClean) {
 				canClean = false;
 				cycle++;
-				Console.WriteLine($"Cleaning cycle {cycle}: {context.Expressions.Count} expressions");
+				Console.WriteLine($"Cleaning cycle {cycle}: {Context.Expressions.Count} expressions");
 
-				for (int i = 0; i < context.Expressions.Count; i++) {
-					context.CurrentExpressionIndex = i;
-					if (context.Expressions[i] is null || context.Expressions[i]!.Clean(context)) {
-						context.Expressions.RemoveAt(i);
+				for (int i = 0; i < Context.Expressions.Count; i++) {
+					Context.CurrentExpressionIndex = i;
+					if (Context.Expressions[i] is null || Context.Expressions[i]!.Clean(Context)) {
+						Context.Expressions.RemoveAt(i);
 						i--;
 						canClean = true;
 					}
@@ -437,7 +454,7 @@ namespace ShaderDecompiler.Decompiler {
 			}
 		}
 
-		Expression? CreateExpression(Stack<Opcode> opcodes, ShaderDecompilationContext context) {
+		Expression? CreateExpression(Stack<Opcode> opcodes) {
 			Opcode op = opcodes.Pop();
 
 			Expression assign;
@@ -450,8 +467,9 @@ namespace ShaderDecompiler.Decompiler {
 					return null;
 
 				case OpcodeType.Def:
-					if (context.Scan.RegisterSizes.TryGetValue((op.Destination!.Value.RegisterType, op.Destination!.Value.Register), out uint size))
+					if (Context.Scan.RegisterSizes.TryGetValue((op.Destination!.Value.RegisterType, op.Destination!.Value.Register), out uint size))
 						size = 4;
+
 					ConstantExpression[] values = op.Constant!.Take((int)size).Select(v => new ConstantExpression(v)).ToArray();
 					assign = ComplexExpression.Create<ValueCtorExpression>(values);
 					break;

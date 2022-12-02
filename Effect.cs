@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.Text;
 
 namespace ShaderDecompiler {
-	public class HLSLEffect {
+	public class Effect {
 		private long BasePosition;
 		private BinaryReader Reader = null!; // not null when reading
 
@@ -11,7 +11,7 @@ namespace ShaderDecompiler {
 		public Technique[] Techniques = Array.Empty<Technique>();
 		public EffectObject[] Objects = Array.Empty<EffectObject>();
 
-		public static HLSLEffect Read(BinaryReader reader) {
+		public static Effect Read(BinaryReader reader) {
 			uint magic = reader.ReadUInt32();
 			if (magic == 0xbcf00bcf) {
 				uint skip = reader.ReadUInt32() - 8;
@@ -22,7 +22,7 @@ namespace ShaderDecompiler {
 
 			if (magic == 0xfeff0901) // HLSL Effect
 			{
-				HLSLEffect effect = new();
+				Effect effect = new();
 				effect.LoadHLSL(reader);
 				return effect;
 			}
