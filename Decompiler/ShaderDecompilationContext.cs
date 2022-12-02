@@ -11,7 +11,7 @@ namespace ShaderDecompiler.Decompiler {
 		public int CurrentExpressionIndex = 0;
 		public bool CurrentExpressionTooComplex = false;
 
-		public int ComplexityThreshold = 15000;
+		public int ComplexityThreshold = 10;
 
 		public ShaderDecompilationContext(Shader shader) {
 			Shader = shader;

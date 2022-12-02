@@ -52,5 +52,29 @@ namespace ShaderDecompiler.Decompiler {
 
 			return ((TResult?)arr[index], other);
 		}
+
+		public static SwizzleMask ToMask(this Swizzle swizzle) {
+
+			// 0 1 2 3 -> 1 2 4 8
+			return (SwizzleMask)Math.Pow(2, (int)swizzle);
+		}
+
+		public static T? SafeAggregate<T>(this IEnumerable<T> ienum, Func<T, T, T> aggregator) {
+
+			T? value = default;
+			bool anyValues = false;
+
+			foreach (T element in ienum) {
+				if (!anyValues) {
+					value = element;
+					anyValues = true;
+					continue;
+				}
+
+				value = aggregator(value!, element);
+			}
+
+			return value;
+		}
 	}
 }

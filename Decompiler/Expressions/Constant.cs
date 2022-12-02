@@ -13,7 +13,7 @@ namespace ShaderDecompiler.Decompiler.Expressions {
 			return Value.ToString(CultureInfo.InvariantCulture);
 		}
 
-		public override bool IsRegisterUsed(ParameterRegisterType type, uint index, bool? destination) => false;
+		public override SwizzleMask GetRegisterUsage(ParameterRegisterType type, uint index, bool? destination) => SwizzleMask.None;
 
 		public override string ToString() {
 			return Value.ToString(CultureInfo.InvariantCulture);

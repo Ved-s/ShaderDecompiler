@@ -27,6 +27,8 @@ namespace ShaderDecompiler.Decompiler.Expressions {
 			}
 		}
 
+		public SwizzleMask UsageMask => EnumerateSwizzles().Select(sw => sw.ToMask()).SafeAggregate((a, b) => a | b);
+
 		public RegisterExpression(ParameterRegisterType type, uint index, Swizzle? x, Swizzle? y, Swizzle? z, Swizzle? w, bool destination) {
 			Type = type;
 			Index = index;
@@ -37,13 +39,18 @@ namespace ShaderDecompiler.Decompiler.Expressions {
 			Destination = destination;
 		}
 
-		public override bool IsRegisterUsed(ParameterRegisterType type, uint index, bool? destination) {
-			return type == Type && index == Index && (destination is null || destination == Destination);
+		public override SwizzleMask GetRegisterUsage(ParameterRegisterType type, uint index, bool? destination) {
+			if (type == Type && index == Index && (destination is null || destination == Destination))
+				return UsageMask;
+
+			return SwizzleMask.None;
 		}
 
 		public override string Decompile(ShaderDecompilationContext context) {
 			if (FullRegister)
 				return GetName(context);
+
+			// TODO: Uncomment this when registers are fully fixed
 
 			//if (X.HasValue && Y.HasValue && Z.HasValue && W.HasValue && X.Value == Y.Value && Y.Value == Z.Value && Z.Value == W.Value)
 			//    return $"{GetName(context)}.{X?.ToString().ToLower()}";
@@ -65,21 +72,7 @@ namespace ShaderDecompiler.Decompiler.Expressions {
 			if (!IsSameRegisterAs(expr))
 				return false;
 
-			HashSet<Swizzle> swizzle = new();
-
-			// did this, so a.z (Z___ swizzle) and a.z (___Z swizzle) count as same
-
-			if (X.HasValue) swizzle.Add(X.Value);
-			if (Y.HasValue) swizzle.Add(Y.Value);
-			if (Z.HasValue) swizzle.Add(Z.Value);
-			if (W.HasValue) swizzle.Add(W.Value);
-
-			if (expr.X.HasValue) swizzle.Remove(expr.X.Value);
-			if (expr.Y.HasValue) swizzle.Remove(expr.Y.Value);
-			if (expr.Z.HasValue) swizzle.Remove(expr.Z.Value);
-			if (expr.W.HasValue) swizzle.Remove(expr.W.Value);
-
-			return swizzle.Count == 0;
+			return UsageMask == expr.UsageMask;
 		}
 
 		public IEnumerable<Swizzle> EnumerateSwizzles() {
@@ -96,19 +89,23 @@ namespace ShaderDecompiler.Decompiler.Expressions {
 				return this;
 
 			// If this register is used inbetween this expression and next assignment (including current expression) to the register or end
+			SwizzleMask thisMask = UsageMask;
+			SwizzleMask accumulatedMask = thisMask;
 			for (int i = context.CurrentExpressionIndex; i < context.Expressions.Count; i++) {
 				if (context.Expressions[i] is null)
 					continue;
 
-				if (context.Expressions[i] is AssignExpression assign && assign.Destination.IsExactRegisterAs(this))
+				accumulatedMask ^= (accumulatedMask & context.Expressions[i]!.GetRegisterUsage(Type, Index, true));
+
+				if (accumulatedMask == SwizzleMask.None) // If register is fully overridden
 					break;
 
-				bool used = i != context.CurrentExpressionIndex && context.Expressions[i]!.IsRegisterUsed(Type, Index, false);
-				if (used)
-					return this;
+				if (i != context.CurrentExpressionIndex) {
+					SwizzleMask usage = context.Expressions[i]!.GetRegisterUsage(Type, Index, false);
+					if ((usage & thisMask) != SwizzleMask.None) // If any channels used here are used elsewhere
+						return this;
+				}
 			}
-
-			Expression? assignment = null;
 
 			// If this register is used inbetween this expression and prevoius assignment (excluding current expression) to the register or end
 			if (context.CurrentExpressionIndex > 0) {
@@ -116,36 +113,49 @@ namespace ShaderDecompiler.Decompiler.Expressions {
 					if (context.Expressions[i] is null)
 						continue;
 
+					// Don't try to optimize if this register's channels were read before
+					if (i != context.CurrentExpressionIndex) {
+						SwizzleMask usage = context.Expressions[i]!.GetRegisterUsage(Type, Index, false);
+						if ((usage & thisMask) != SwizzleMask.None)
+							return this;
+					}
+				}
+			}
 
+			Expression? assignment = null;
+
+			// Search for matching replacement
+			if (context.CurrentExpressionIndex > 0) {
+				for (int i = context.CurrentExpressionIndex - 1; i >= 0; i--) {
+					if (context.Expressions[i] is null)
+						continue;
 
 					if (context.Expressions[i] is AssignExpression assign) {
-						if (Type == ParameterRegisterType.Const && assign.Source is ValueCtorExpression ctor && assign.Destination.FullRegister) {
-							List<Expression> values = new();
+						if (assign.Destination.IsSameRegisterAs(this)) {
+							if (Type == ParameterRegisterType.Const && assign.Source is ValueCtorExpression ctor && assign.Destination.FullRegister) {
+								List<Expression> values = new();
 
-							foreach (Swizzle sw in EnumerateSwizzles())
-								values.Add(ctor.SubExpressions[(int)sw]);
+								foreach (Swizzle sw in EnumerateSwizzles())
+									values.Add(ctor.SubExpressions[(int)sw]);
 
-							if (values.Count > 0) {
-								fail = false;
+								if (values.Count > 0) {
+									fail = false;
 
-								if (values.Count == 1)
-									return values[0];
-								return ComplexExpression.Create<ValueCtorExpression>(values.ToArray());
+									if (values.Count == 1)
+										return values[0];
+									return ComplexExpression.Create<ValueCtorExpression>(values.ToArray());
+								}
+							}
+							if (assign.Destination.IsExactRegisterAs(this)) {
+								if (CheckWeightExceededWith(context, assign.Source))
+									return this;
+
+								context.Expressions[i] = null;
+								assignment = assign.Source;
+								break;
 							}
 						}
-
-						if (assign.Destination.IsExactRegisterAs(this)) {
-							if (CheckWeightExceededWith(context, assign.Source))
-								return this;
-
-							context.Expressions[i] = null;
-							assignment = assign.Source;
-							break;
-						}
 					}
-
-					if (i != context.CurrentExpressionIndex && context.Expressions[i]!.IsRegisterUsed(Type, Index, false))
-						return this;
 				}
 			}
 

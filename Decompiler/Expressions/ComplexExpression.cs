@@ -16,9 +16,12 @@ namespace ShaderDecompiler.Decompiler.Expressions {
 			expr.SubExpressions = expressions;
 			return expr;
 		}
+		
+		public override SwizzleMask GetRegisterUsage(ParameterRegisterType type, uint index, bool? destination) {
+			if (SubExpressions.Length == 0)
+				return SwizzleMask.None;
 
-		public override bool IsRegisterUsed(ParameterRegisterType type, uint index, bool? destination) {
-			return SubExpressions.Any(expr => expr.IsRegisterUsed(type, index, destination));
+			return SubExpressions.Select(expr => expr.GetRegisterUsage(type, index, destination)).SafeAggregate((a, b) => a | b);
 		}
 
 		public sealed override Expression Simplify(ShaderDecompilationContext context, out bool fail) {

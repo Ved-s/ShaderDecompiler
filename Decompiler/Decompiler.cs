@@ -2,8 +2,6 @@
 using ShaderDecompiler.Structures;
 using System.Diagnostics;
 
-// TODO Make register simplification smarter, accumulate used swizzles when scanning for used registers
-
 namespace ShaderDecompiler.Decompiler {
 	public class Decompiler {
 		CodeWriter Writer = new();

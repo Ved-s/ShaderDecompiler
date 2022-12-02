@@ -43,15 +43,21 @@
 			if (context.Scan.Arguments.Any(arg => arg.Output && arg.RegisterType == Destination.Type && arg.Register == Destination.Index))
 				return false;
 
+			SwizzleMask destMask = Destination.UsageMask;
+
 			for (int i = context.CurrentExpressionIndex + 1; i < context.Expressions.Count; i++) {
 				if (context.Expressions[i] is null)
 					continue;
 
-				bool used = i != context.CurrentExpressionIndex && context.Expressions[i]!.IsRegisterUsed(Destination.Type, Destination.Index, false);
-				if (used)
-					return false;
+				if (i != context.CurrentExpressionIndex) {
+					SwizzleMask usage = context.Expressions[i]!.GetRegisterUsage(Destination.Type, Destination.Index, false);
+					if ((usage & destMask) != SwizzleMask.None)
+						return false;
+				}
 
-				if (context.Expressions[i] is AssignExpression assign && assign.Destination.IsSameRegisterAs(Destination))
+				if (context.Expressions[i] is AssignExpression assign 
+			     && assign.Destination.IsSameRegisterAs(Destination)
+				 && (assign.Destination.UsageMask & destMask) == destMask) // If assign.Destination fully overrides current destination
 					break;
 			}
 			return true;
