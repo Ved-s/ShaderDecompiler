@@ -447,7 +447,7 @@ namespace ShaderDecompiler.Decompiler {
 					assign = ComplexExpression.Create<AdditionExpression>(op.Sources[0].ToExpr(), op.Sources[1].ToExpr());
 					break;
 				case OpcodeType.Sub:
-					assign = ComplexExpression.Create<SubstractionExpression>(op.Sources[0].ToExpr(), op.Sources[1].ToExpr());
+					assign = ComplexExpression.Create<SubtractionExpression>(op.Sources[0].ToExpr(), op.Sources[1].ToExpr());
 					break;
 				case OpcodeType.Mul:
 					assign = ComplexExpression.Create<MultiplicationExpression>(op.Sources[0].ToExpr(), op.Sources[1].ToExpr());
