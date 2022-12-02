@@ -255,6 +255,7 @@ namespace ShaderDecompiler.Decompilers {
 
 						case ParameterRegisterType.Misctype:
 						case ParameterRegisterType.Sampler:
+						case ParameterRegisterType.Address:
 							break;
 
 						default:
