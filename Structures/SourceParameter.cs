@@ -2,7 +2,7 @@
 
 namespace ShaderDecompiler.Structures;
 
-public class SourceParameter {
+public class SourceParameter : OpcodeParameter {
 	public static readonly Dictionary<ParameterRegisterType, string> RegisterTypeNames = new() {
 		[ParameterRegisterType.Temp] = "tmp",
 		[ParameterRegisterType.Input] = "arg",
@@ -16,8 +16,6 @@ public class SourceParameter {
 		[Swizzle.W] = "w",
 	};
 
-	public uint Register;
-	public ParameterRegisterType RegisterType;
 	public bool RelativeAddressing;
 	public SourceModifier Modifier;
 
@@ -39,10 +37,10 @@ public class SourceParameter {
 		param.SwizzleW = (Swizzle)token[22..23];
 		param.Modifier = (SourceModifier)token[24..27];
 
-		if (param.RegisterType == ParameterRegisterType.Address && version.PixelShader is true)
+		if (param.RegisterType == ParameterRegisterType.Address && version.Type == ShaderType.PixelShader)
 			param.RegisterType = ParameterRegisterType.Texture;
 
-		if (param.RegisterType == ParameterRegisterType.Output && version.PixelShader is false && version.Major < 3)
+		if (param.RegisterType == ParameterRegisterType.Output && version.CheckVersionLess(ShaderType.VertexShader, 3, 0))
 			param.RegisterType = ParameterRegisterType.Texcrdout;
 
 		return param;

@@ -87,7 +87,7 @@ namespace ShaderDecompiler.Decompilers {
 
 					switch (dest.RegisterType) {
 
-						case ParameterRegisterType.Texture when Shader.Version.PixelShader is true && Shader.Version.Major >= 3:
+						case ParameterRegisterType.Texture when Shader.Version.CheckVersionGreaterOrEqual(ShaderType.PixelShader, 3, 0):
 						case ParameterRegisterType.Input:
 							arg = Context.Scan.GetArgument(dest.RegisterType, dest.Register);
 							arg.Usage = (DeclUsage)dcl[0..4];

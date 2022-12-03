@@ -1,17 +1,23 @@
 ﻿using ShaderDecompiler.Structures;
 using System.Data;
+using System.Diagnostics;
+using System.Reflection.Emit;
+using System.Reflection.PortableExecutable;
 using System.Text;
 
 namespace ShaderDecompiler {
 	public class Shader {
-		static readonly uint CTABHeader = 'C' | 'T' << 8 | 'A' << 16 | 'B' << 24;
+		public const uint CTABHeader = 'C' | 'T' << 8 | 'A' << 16 | 'B' << 24;
+		public const uint PRESHeader = 'P' | 'R' << 8 | 'E' << 16 | 'S' << 24;
 
-		public ShaderVersion Version { get; private set; }
+		public ShaderVersion Version { get; set; }
 
 		public List<Opcode> Opcodes { get; } = new();
 		public List<Constant> Constants { get; } = new();
 
 		public Dictionary<uint, TypeInfo> Types { get; } = new();
+
+		public Preshader? Preshader = null;
 
 		public string? Creator { get; private set; }
 		public string? Target { get; private set; }
@@ -26,7 +32,7 @@ namespace ShaderDecompiler {
 			return shader;
 		}
 
-		bool ReadOpcode(BinaryReader reader) {
+		protected bool ReadOpcode(BinaryReader reader) {
 			Opcode op = new();
 			BitNumber token = new(reader.ReadUInt32());
 
@@ -40,8 +46,10 @@ namespace ShaderDecompiler {
 					reader.BaseStream.Seek(commentStart, SeekOrigin.Begin);
 					op.Comment = reader.ReadBytes((int)op.Length * 4);
 				}
-				else
+				else {
 					reader.BaseStream.Seek(commentStart + op.Length * 4, SeekOrigin.Begin);
+					skipAdd = true;
+				}
 			}
 
 			else if (op.Type == OpcodeType.End) {
@@ -86,16 +94,27 @@ namespace ShaderDecompiler {
 			return op.Type != OpcodeType.End;
 		}
 
-		bool ProcessSpecialComments(BinaryReader reader, uint length) {
+		protected virtual bool ProcessSpecialComments(BinaryReader reader, uint length) {
 			uint header = reader.ReadUInt32();
-			if (header == CTABHeader) {
-				ReadCTAB(reader, length - 4);
-				return true;
+			switch (header) {
+				case CTABHeader:
+					ReadConstantTable(reader, length - 4);
+					return true;
+
+				case PRESHeader:
+					Preshader = Preshader.Read(reader, this);
+
+					foreach (Constant @const in Preshader.Constants)
+						if (!Constants.Any(c => c.RegSet == @const.RegSet && c.RegIndex == @const.RegIndex))
+							Constants.Add(@const);
+
+					return true;
+
 			}
 			return false;
 		}
 
-		void ReadCTAB(BinaryReader reader, uint length) {
+		protected void ReadConstantTable(BinaryReader reader, uint length) {
 			uint start = (uint)reader.BaseStream.Position;
 
 			if (reader.ReadUInt32() != 28)
@@ -233,6 +252,173 @@ namespace ShaderDecompiler {
 			finally {
 				reader.BaseStream.Seek(streamPos, SeekOrigin.Begin);
 			}
+		}
+	}
+
+	public class Preshader : Shader {
+
+		public const uint FXLCHeader = 'F' | 'X' << 8 | 'L' << 16 | 'C' << 24;
+		public const uint CLITHeader = 'C' | 'L' << 8 | 'I' << 16 | 'T' << 24;
+		public const uint PRSIHeader = 'P' | 'R' << 8 | 'S' << 16 | 'I' << 24;
+
+		public readonly Shader Shader;
+
+		public double[]? Literals;
+
+		public Preshader(Shader shader) {
+			Shader = shader;
+		}
+
+		public static Preshader Read(BinaryReader reader, Shader shader) {
+			Preshader preshader = new(shader) {
+				Version = ShaderVersion.Read(reader)
+			};
+
+			while (preshader.ReadOpcode(reader)) { }
+			return preshader;
+		}
+
+		protected override bool ProcessSpecialComments(BinaryReader reader, uint length) {
+			uint header = reader.ReadUInt32();
+			switch (header) {
+				case CTABHeader:
+					ReadConstantTable(reader, length - 4);
+					return true;
+
+				case CLITHeader:
+					ReadCLIT(reader);
+					return true;
+
+				case FXLCHeader:
+					ReadFXLC(reader);
+					break;
+
+			}
+			return false;
+		}
+
+		void ReadCLIT(BinaryReader reader) {
+			uint count = reader.ReadUInt32();
+			Literals = new double[count];
+			for (int i = 0; i < count; i++) {
+				Literals[i] = reader.ReadDouble();
+			}
+		}
+
+		void ReadFXLC(BinaryReader reader) {
+			uint opcodeCount = reader.ReadUInt32();
+
+			for (int i = 0; i < opcodeCount; i++)
+				ReadPreshaderOpcode(reader);
+		}
+
+		void ReadPRSI(BinaryReader reader) {
+		}
+
+		void ReadPreshaderOpcode(BinaryReader reader) {
+			uint opToken = reader.ReadUInt32();
+			OpcodeType type;
+
+			switch ((opToken >> 16) & 0xFFFF) {
+				case 0x1000: type = OpcodeType.Mov; break;
+				case 0x1010: type = OpcodeType.Neg; break;
+				case 0x1030: type = OpcodeType.Rcp; break;
+				case 0x1040: type = OpcodeType.Frc; break;
+				case 0x1050: type = OpcodeType.Exp; break;
+				case 0x1060: type = OpcodeType.Log; break;
+				case 0x1070: type = OpcodeType.Rsq; break;
+				case 0x1080: type = OpcodeType.Sin; break;
+				case 0x1090: type = OpcodeType.Cos; break;
+				case 0x10A0: type = OpcodeType.Asin; break;
+				case 0x10B0: type = OpcodeType.Acos; break;
+				case 0x10C0: type = OpcodeType.Atan; break;
+				case 0x2000: type = OpcodeType.Min; break;
+				case 0x2010: type = OpcodeType.Max; break;
+				case 0x2020: type = OpcodeType.Lt; break;
+				case 0x2030: type = OpcodeType.Ge; break;
+				case 0x2040: type = OpcodeType.Add; break;
+				case 0x2050: type = OpcodeType.Mul; break;
+				case 0x2060: type = OpcodeType.Atan2; break;
+				case 0x2080: type = OpcodeType.Div; break;
+				case 0x3000: type = OpcodeType.Cmp; break;
+				case 0x3010: type = OpcodeType.Movc; break;
+				case 0x5000: type = OpcodeType.Dot; break;
+				case 0x5020: type = OpcodeType.Noise; break;
+				case 0xA000: type = OpcodeType.MinScalar; break;
+				case 0xA010: type = OpcodeType.MaxScalar; break;
+				case 0xA020: type = OpcodeType.LtScalar; break;
+				case 0xA030: type = OpcodeType.GeScalar; break;
+				case 0xA040: type = OpcodeType.AddScalar; break;
+				case 0xA050: type = OpcodeType.MulScalar; break;
+				case 0xA060: type = OpcodeType.Atan2Scalar; break;
+				case 0xA080: type = OpcodeType.DivScalar; break;
+				case 0xD000: type = OpcodeType.DotScalar; break;
+				case 0xD020: type = OpcodeType.NoiseScalar; break;
+				default: type = OpcodeType.Unknown; break;
+			}
+
+			Opcode opcode = new();
+			opcode.Type = type;
+
+			uint elements = opToken & 0xff;
+			opcode.Length = reader.ReadUInt32() + 1;
+			opcode.Sources = new SourceParameter[opcode.Length - 1];
+
+			for (int i = 0; i < opcode.Length; i++) {
+				uint operandArrayCount = reader.ReadUInt32();
+				uint operandType = reader.ReadUInt32();
+				uint operandItem = reader.ReadUInt32();
+
+				OpcodeParameter param;
+				if (i == opcode.Length - 1) {
+					opcode.Destination = new() { 
+						WriteX = true,
+						WriteY = true,
+						WriteZ = true,
+						WriteW = true,
+					};
+					param = opcode.Destination;
+				}
+				else {
+					opcode.Sources[i] = new() {
+						SwizzleX = Swizzle.X,
+						SwizzleY = Swizzle.Y,
+						SwizzleZ = Swizzle.Z,
+						SwizzleW = Swizzle.W
+					};
+					param = opcode.Sources[i];
+				}
+				param.Register = operandItem;
+
+				switch (operandType) {
+					case 1:
+						param.RegisterType = ParameterRegisterType.Literal;
+						break;
+
+					case 2:
+						param.RegisterType = ParameterRegisterType.Input;
+						for (int j = 0; j < operandArrayCount; j++) {
+							reader.ReadUInt32();
+							reader.ReadUInt32();
+						}
+
+						break;
+
+					case 4:
+						param.RegisterType = ParameterRegisterType.Output;
+						break;
+
+					case 7:
+						param.RegisterType = ParameterRegisterType.Temp;
+						break;
+
+					default:
+						Debugger.Break();
+						break;
+				}
+			}
+
+			Opcodes.Add(opcode);
 		}
 	}
 }

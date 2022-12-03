@@ -24,5 +24,8 @@
 		// Assigned manually
 		Texcrdout = 106,
 		Texture = 103,
+
+		// Preshader register types
+		Literal = 200
 	}
 }

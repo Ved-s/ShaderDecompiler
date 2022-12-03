@@ -2,10 +2,7 @@
 
 namespace ShaderDecompiler.Structures;
 
-public class DestinationParameter {
-	public uint Register;
-	public ParameterRegisterType RegisterType;
-
+public class DestinationParameter : OpcodeParameter {
 	public bool WriteX;
 	public bool WriteY;
 	public bool WriteZ;
@@ -22,10 +19,10 @@ public class DestinationParameter {
 		param.WriteZ = token[18];
 		param.WriteW = token[19];
 
-		if (param.RegisterType == ParameterRegisterType.Address && version.PixelShader is true)
+		if (param.RegisterType == ParameterRegisterType.Address && version.Type == ShaderType.PixelShader)
 			param.RegisterType = ParameterRegisterType.Texture;
 
-		if (param.RegisterType == ParameterRegisterType.Output && version.PixelShader is false && version.Major < 3)
+		if (param.RegisterType == ParameterRegisterType.Output && version.CheckVersionLess(ShaderType.VertexShader, 3, 0))
 			param.RegisterType = ParameterRegisterType.Texcrdout;
 
 		return param;
