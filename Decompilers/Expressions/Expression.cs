@@ -17,5 +17,12 @@ namespace ShaderDecompiler.Decompilers.Expressions {
 		public virtual void MaskSwizzle(SwizzleMask mask) { }
 
 		public virtual int CalculateComplexity() => 1;
+
+		public static Expression operator +(Expression a, Expression b) => ComplexExpression.Create<AdditionExpression>(a, b);
+		public static Expression operator -(Expression a, Expression b) => ComplexExpression.Create<SubtractionExpression>(a, b);
+		public static Expression operator *(Expression a, Expression b) => ComplexExpression.Create<MultiplicationExpression>(a, b);
+		public static Expression operator /(Expression a, Expression b) => ComplexExpression.Create<DivisionExpression>(a, b);
+
+		public static Expression operator -(Expression a) => ComplexExpression.Create<DivisionExpression>(a);
 	}
 }

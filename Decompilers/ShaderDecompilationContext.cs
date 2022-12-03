@@ -10,7 +10,7 @@ namespace ShaderDecompiler.Decompilers {
 		public List<Expression?> Expressions = new();
 		public int CurrentExpressionIndex = 0;
 
-		public int ComplexityThreshold = 20;
+		public int ComplexityThreshold = int.MaxValue;
 
 		public ShaderDecompilationContext(Shader shader) {
 			Shader = shader;

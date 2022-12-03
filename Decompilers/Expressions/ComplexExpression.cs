@@ -1,5 +1,6 @@
 ﻿using ShaderDecompiler.Structures;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 
 namespace ShaderDecompiler.Decompilers.Expressions {
 	public abstract class ComplexExpression : Expression {
@@ -16,7 +17,7 @@ namespace ShaderDecompiler.Decompilers.Expressions {
 			expr.SubExpressions = expressions;
 			return expr;
 		}
-		
+
 		public override SwizzleMask GetRegisterUsage(ParameterRegisterType type, uint index, bool? destination) {
 			if (SubExpressions.Length == 0)
 				return SwizzleMask.None;
@@ -54,6 +55,28 @@ namespace ShaderDecompiler.Decompilers.Expressions {
 		public override void MaskSwizzle(SwizzleMask mask) {
 			for (int i = 0; i < SubExpressions.Length; i++)
 				SubExpressions[i].MaskSwizzle(ModifySubSwizzleMask(mask, i));
+		}
+
+		public bool MatchExpressions<T1, T2>([NotNullWhen(true)] out T1? t1, [NotNullWhen(true)] out T2? t2)
+			where T1 : Expression
+			where T2 : Expression {
+			t1 = null;
+			t2 = null;
+
+			if (SubExpressions.Length != 2)
+				return false;
+
+			t1 = SubExpressions[0] as T1;
+			t2 = SubExpressions[1] as T2;
+
+			if (t1 is not null && t2 is not null) {
+				return true;
+			}
+
+			t1 = SubExpressions[1] as T1;
+			t2 = SubExpressions[0] as T2;
+
+			return t1 is not null && t2 is not null;
 		}
 
 		public virtual ComplexExpression CloneSelf() => (ComplexExpression)Activator.CreateInstance(GetType())!;

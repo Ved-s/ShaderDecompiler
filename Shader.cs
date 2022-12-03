@@ -64,13 +64,18 @@ namespace ShaderDecompiler {
 						op.Destination = DestinationParameter.Read(reader, Version);
 					}
 					else {
-						if (op.Length >= 1)
-							op.Destination = DestinationParameter.Read(reader, Version);
+						int i = 0;
 
-						if (op.Length >= 2) {
-							op.Sources = new SourceParameter[op.Length - 1];
-							for (int i = 0; i < op.Sources.Length; i++)
-								op.Sources[i] = SourceParameter.Read(reader, Version);
+						if (op.Length > i && !Opcode.OpcodeInfo[op.Type].NoDest) {
+							op.Destination = DestinationParameter.Read(reader, Version);
+							i++;
+						}
+
+						if (op.Length > i) {
+							int start = i;
+							op.Sources = new SourceParameter[op.Length - i];
+							for (; i < op.Length; i++)
+								op.Sources[i - start] = SourceParameter.Read(reader, Version);
 						}
 					}
 				}

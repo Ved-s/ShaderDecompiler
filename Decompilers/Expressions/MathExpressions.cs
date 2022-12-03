@@ -13,12 +13,13 @@
 		public override string Decompile(ShaderDecompilationContext context) {
 
 			// TODO: Expression.NeedsParenthesesWrapping
-			bool needsParentheses = A is MathOperationExpression and not AdditionExpression and not MultiplicationExpression;
+			string a = A.Decompile(context);
+			string b = B.Decompile(context);
 
-			if (needsParentheses)
-				return $"({A.Decompile(context)}) {Operation} {B.Decompile(context)}";
+			if (A is MathOperationExpression && A.GetType() != GetType()) a = $"({a})";
+			if (B is MathOperationExpression && B.GetType() != GetType()) b = $"({b})";
 
-			return $"{A.Decompile(context)} {Operation} {B.Decompile(context)}";
+			return $"{a} {Operation} {b}";
 		}
 
 		public override string ToString() {

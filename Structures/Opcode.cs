@@ -4,7 +4,91 @@ using System.Text;
 namespace ShaderDecompiler.Structures;
 
 public struct Opcode {
-	public static readonly Dictionary<OpcodeType, string> OpcodeNames = new() { [OpcodeType.Nop] = "nop", [OpcodeType.Mov] = "mov", [OpcodeType.Add] = "add", [OpcodeType.Sub] = "sub", [OpcodeType.Mad] = "mad", [OpcodeType.Mul] = "mul", [OpcodeType.Rcp] = "rcp", [OpcodeType.Rsq] = "rsq", [OpcodeType.Dp3] = "dp3", [OpcodeType.Dp4] = "dp4", [OpcodeType.Min] = "min", [OpcodeType.Max] = "max", [OpcodeType.Slt] = "slt", [OpcodeType.Sge] = "sge", [OpcodeType.Exp] = "exp", [OpcodeType.Log] = "log", [OpcodeType.Lit] = "lit", [OpcodeType.Dst] = "dst", [OpcodeType.Lrp] = "lrp", [OpcodeType.Frc] = "frc", [OpcodeType.M4x4] = "m4x4", [OpcodeType.M4x3] = "m4x3", [OpcodeType.M3x4] = "m3x4", [OpcodeType.M3x3] = "m3x3", [OpcodeType.M3x2] = "m3x2", [OpcodeType.Call] = "call", [OpcodeType.Callnz] = "callnz", [OpcodeType.Loop] = "loop", [OpcodeType.Ret] = "ret", [OpcodeType.Endloop] = "endloop", [OpcodeType.Label] = "label", [OpcodeType.Dcl] = "dcl", [OpcodeType.Pow] = "pow", [OpcodeType.Crs] = "crs", [OpcodeType.Sgn] = "sgn", [OpcodeType.Abs] = "abs", [OpcodeType.Nrm] = "nrm", [OpcodeType.Sincos] = "sincos", [OpcodeType.Rep] = "rep", [OpcodeType.Endrep] = "endrep", [OpcodeType.If] = "if", [OpcodeType.Ifc] = "ifc", [OpcodeType.Else] = "else", [OpcodeType.Endif] = "endif", [OpcodeType.Break] = "break", [OpcodeType.Breakc] = "breakc", [OpcodeType.Mova] = "mova", [OpcodeType.Defb] = "defb", [OpcodeType.Defi] = "defi", [OpcodeType.Texcrd] = "texcrd", [OpcodeType.Texkill] = "texkill", [OpcodeType.Texld] = "texld", [OpcodeType.Texbem] = "texbem", [OpcodeType.Texbeml] = "texbeml", [OpcodeType.Texreg2ar] = "texreg2ar", [OpcodeType.Texreg2gb] = "texreg2gb", [OpcodeType.Texm3x2pad] = "texm3x2pad", [OpcodeType.Texm3x2tex] = "texm3x2tex", [OpcodeType.Texm3x3pad] = "texm3x3pad", [OpcodeType.Texm3x3tex] = "texm3x3tex", [OpcodeType.Texm3x3spec] = "texm3x3spec", [OpcodeType.Texm3x3vspec] = "texm3x3vspec", [OpcodeType.Expp] = "expp", [OpcodeType.Logp] = "logp", [OpcodeType.Cnd] = "cnd", [OpcodeType.Def] = "def", [OpcodeType.Texreg2rgb] = "texreg2rgb", [OpcodeType.Texdp3tex] = "texdp3tex", [OpcodeType.Texm3x2depth] = "texm3x2depth", [OpcodeType.Texdp3] = "texdp3", [OpcodeType.Texm3x3] = "texm3x3", [OpcodeType.Texdepth] = "texdepth", [OpcodeType.Cmp] = "cmp", [OpcodeType.Bem] = "bem", [OpcodeType.Dp2add] = "dp2add", [OpcodeType.Dsx] = "dsx", [OpcodeType.Dsy] = "dsy", [OpcodeType.Texldd] = "texldd", [OpcodeType.Setp] = "setp", [OpcodeType.Texldl] = "texldl", [OpcodeType.Breakp] = "breakp", [OpcodeType.Comment] = "comment", [OpcodeType.End] = "end" };
+	public static readonly Dictionary<OpcodeType, OpcodeTypeInfo> OpcodeInfo = new() {
+		[OpcodeType.Nop] = new("nop"),
+		[OpcodeType.Mov] = new("mov"),
+		[OpcodeType.Add] = new("add"),
+		[OpcodeType.Sub] = new("sub"),
+		[OpcodeType.Mad] = new("mad"),
+		[OpcodeType.Mul] = new("mul"),
+		[OpcodeType.Rcp] = new("rcp"),
+		[OpcodeType.Rsq] = new("rsq"),
+		[OpcodeType.Dp3] = new("dp3"),
+		[OpcodeType.Dp4] = new("dp4"),
+		[OpcodeType.Min] = new("min"),
+		[OpcodeType.Max] = new("max"),
+		[OpcodeType.Slt] = new("slt"),
+		[OpcodeType.Sge] = new("sge"),
+		[OpcodeType.Exp] = new("exp"),
+		[OpcodeType.Log] = new("log"),
+		[OpcodeType.Lit] = new("lit"),
+		[OpcodeType.Dst] = new("dst"),
+		[OpcodeType.Lrp] = new("lrp"),
+		[OpcodeType.Frc] = new("frc"),
+		[OpcodeType.M4x4] = new("m4x4"),
+		[OpcodeType.M4x3] = new("m4x3"),
+		[OpcodeType.M3x4] = new("m3x4"),
+		[OpcodeType.M3x3] = new("m3x3"),
+		[OpcodeType.M3x2] = new("m3x2"),
+		[OpcodeType.Call] = new("call"),
+		[OpcodeType.Callnz] = new("callnz"),
+		[OpcodeType.Loop] = new("loop"),
+		[OpcodeType.Ret] = new("ret"),
+		[OpcodeType.Endloop] = new("endloop"),
+		[OpcodeType.Label] = new("label"),
+		[OpcodeType.Dcl] = new("dcl"),
+		[OpcodeType.Pow] = new("pow"),
+		[OpcodeType.Crs] = new("crs"),
+		[OpcodeType.Sgn] = new("sgn"),
+		[OpcodeType.Abs] = new("abs"),
+		[OpcodeType.Nrm] = new("nrm"),
+		[OpcodeType.Sincos] = new("sincos"),
+		[OpcodeType.Rep] = new("rep"),
+		[OpcodeType.Endrep] = new("endrep"),
+		[OpcodeType.If] = new("if", true),
+		[OpcodeType.Ifc] = new("ifc", true),
+		[OpcodeType.Else] = new("else", true),
+		[OpcodeType.Endif] = new("endif", true),
+		[OpcodeType.Break] = new("break", true),
+		[OpcodeType.Breakc] = new("breakc", true),
+		[OpcodeType.Mova] = new("mova"),
+		[OpcodeType.Defb] = new("defb"),
+		[OpcodeType.Defi] = new("defi"),
+		[OpcodeType.Texcrd] = new("texcrd"),
+		[OpcodeType.Texkill] = new("texkill"),
+		[OpcodeType.Texld] = new("texld"),
+		[OpcodeType.Texbem] = new("texbem"),
+		[OpcodeType.Texbeml] = new("texbeml"),
+		[OpcodeType.Texreg2ar] = new("texreg2ar"),
+		[OpcodeType.Texreg2gb] = new("texreg2gb"),
+		[OpcodeType.Texm3x2pad] = new("texm3x2pad"),
+		[OpcodeType.Texm3x2tex] = new("texm3x2tex"),
+		[OpcodeType.Texm3x3pad] = new("texm3x3pad"),
+		[OpcodeType.Texm3x3tex] = new("texm3x3tex"),
+		[OpcodeType.Texm3x3spec] = new("texm3x3spec"),
+		[OpcodeType.Texm3x3vspec] = new("texm3x3vspec"),
+		[OpcodeType.Expp] = new("expp"),
+		[OpcodeType.Logp] = new("logp"),
+		[OpcodeType.Cnd] = new("cnd"),
+		[OpcodeType.Def] = new("def"),
+		[OpcodeType.Texreg2rgb] = new("texreg2rgb"),
+		[OpcodeType.Texdp3tex] = new("texdp3tex"),
+		[OpcodeType.Texm3x2depth] = new("texm3x2depth"),
+		[OpcodeType.Texdp3] = new("texdp3"),
+		[OpcodeType.Texm3x3] = new("texm3x3"),
+		[OpcodeType.Texdepth] = new("texdepth"),
+		[OpcodeType.Cmp] = new("cmp"),
+		[OpcodeType.Bem] = new("bem"),
+		[OpcodeType.Dp2add] = new("dp2add"),
+		[OpcodeType.Dsx] = new("dsx"),
+		[OpcodeType.Dsy] = new("dsy"),
+		[OpcodeType.Texldd] = new("texldd"),
+		[OpcodeType.Setp] = new("setp"),
+		[OpcodeType.Texldl] = new("texldl"),
+		[OpcodeType.Breakp] = new("breakp"),
+		[OpcodeType.Comment] = new("comment"),
+		[OpcodeType.End] = new("end")
+	};
 
 	public OpcodeType Type = OpcodeType.Nop;
 	public uint Length = 0;
@@ -25,8 +109,8 @@ public struct Opcode {
 			return Comment is null ? "" : "// " + Encoding.ASCII.GetString(Comment);
 
 		StringBuilder sb = new();
-		if (OpcodeNames.TryGetValue(Type, out string? name))
-			sb.Append(name);
+		if (OpcodeInfo.TryGetValue(Type, out OpcodeTypeInfo info))
+			sb.Append(info.Name);
 		else
 			sb.Append("???");
 
@@ -61,3 +145,5 @@ public struct Opcode {
 		return sb.ToString();
 	}
 }
+
+public record struct OpcodeTypeInfo(string Name, bool NoDest = false);

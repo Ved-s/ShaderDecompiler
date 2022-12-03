@@ -332,13 +332,17 @@ namespace ShaderDecompiler.Decompilers {
 					assign = ComplexExpression.Create<DivisionExpression>(new ConstantExpression(1), op.Sources[0].ToExpr());
 					break;
 				case OpcodeType.Add:
-					assign = ComplexExpression.Create<AdditionExpression>(op.Sources[0].ToExpr(), op.Sources[1].ToExpr());
+					assign = op.Sources[0].ToExpr() + op.Sources[1].ToExpr();
 					break;
 				case OpcodeType.Sub:
-					assign = ComplexExpression.Create<SubtractionExpression>(op.Sources[0].ToExpr(), op.Sources[1].ToExpr());
+					assign = op.Sources[0].ToExpr() - op.Sources[1].ToExpr();
 					break;
 				case OpcodeType.Mul:
-					assign = ComplexExpression.Create<MultiplicationExpression>(op.Sources[0].ToExpr(), op.Sources[1].ToExpr());
+					assign = op.Sources[0].ToExpr() * op.Sources[1].ToExpr();
+					break;
+
+				case OpcodeType.Mad:
+					assign = (op.Sources[0].ToExpr() * op.Sources[1].ToExpr()) + op.Sources[2].ToExpr();
 					break;
 
 				case OpcodeType.Mov:
