@@ -8,7 +8,6 @@
   </PropertyGroup>
 
   <Target Name="CompileShader" AfterTargets="Build" Condition="Exists('TestData/Shader.fx')">
-	<Delete Files="TestData/Result.fx"/>
 	<Exec Command="fxc /T fx_2_0 /Fo TestData/Shader.fxb TestData/Shader.fx" />
 	<!-- <Exec Command="fxcompiler" WorkingDirectory="TestData"/> -->
   </Target>

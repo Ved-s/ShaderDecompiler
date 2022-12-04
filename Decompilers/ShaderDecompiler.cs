@@ -264,7 +264,7 @@ namespace ShaderDecompiler.Decompilers {
 			int cycle = -1;
 			while (canSimplify) {
 				cycle++;
-				Console.WriteLine($"Simplification cycle {cycle}: {Context.Expressions.Count} expressions");
+				//Console.WriteLine($"Simplification cycle {cycle}: {Context.Expressions.Count} expressions");
 
 				canSimplify = false;
 				removeIndexes.Clear();
@@ -295,7 +295,7 @@ namespace ShaderDecompiler.Decompilers {
 			while (canClean) {
 				canClean = false;
 				cycle++;
-				Console.WriteLine($"Cleaning cycle {cycle}: {Context.Expressions.Count} expressions");
+				//Console.WriteLine($"Cleaning cycle {cycle}: {Context.Expressions.Count} expressions");
 
 				for (int i = 0; i < Context.Expressions.Count; i++) {
 					Context.CurrentExpressionIndex = i;
