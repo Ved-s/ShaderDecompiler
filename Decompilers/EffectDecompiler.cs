@@ -30,6 +30,12 @@ namespace ShaderDecompiler.Decompilers {
 			foreach (Technique technique in Effect.Techniques) {
 				foreach (Pass pass in technique.Passes) {
 					foreach (State state in pass.States) {
+						if (settings?.ShaderPathFilter is not null
+						 && !settings.ShaderPathFilter.IsMatch($"{technique.Name}/{pass.Name}/{state.Type}")) {
+							state.Ignored = true;
+							continue;
+						}
+
 						state.Name = $"{technique.Name}{pass.Name}{state.Type}";
 
 						uint objIndex = (state.Value.Object as uint[])![0];
@@ -49,18 +55,27 @@ namespace ShaderDecompiler.Decompilers {
 			}
 
 			foreach (Technique technique in Effect.Techniques) {
+				if (technique.Passes.All(p => p.States.All(s => s.Ignored)))
+					continue;
+
 				Writer.WriteSpaced("technique");
 				Writer.WriteSpaced(technique.Name!);
 				Writer.NewLine();
 				Writer.StartBlock();
 				Writer.NewLine();
 				foreach (Pass pass in technique.Passes) {
+					if (pass.States.All(s => s.Ignored))
+						continue;
+
 					Writer.WriteSpaced("pass");
 					Writer.WriteSpaced(pass.Name!);
 					Writer.NewLine();
 					Writer.StartBlock();
 					Writer.NewLine();
 					foreach (State state in pass.States) {
+						if (state.Ignored)
+							continue;
+
 						uint objIndex = (state.Value.Object as uint[])![0];
 
 						if (Effect.Objects[objIndex].Object is not Shader shader) {

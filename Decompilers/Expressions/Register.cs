@@ -144,36 +144,43 @@ namespace ShaderDecompiler.Decompilers.Expressions {
 			if (!allowComplexityIncrease)
 				return this;
 
-			// If this register is used inbetween this expression and next assignment (including current expression) to the register or end
+			
 			SwizzleMask thisMask = UsageMask;
-			SwizzleMask accumulatedMask = thisMask;
-			for (int i = context.CurrentExpressionIndex; i < context.Expressions.Count; i++) {
-				if (context.Expressions[i] is null)
-					continue;
 
-				accumulatedMask ^= (accumulatedMask & context.Expressions[i]!.GetRegisterUsage(Type, Index, true));
+			if (Type != ParameterRegisterType.Const || !context.Scan.DeclaredConstants.Contains(Index)) {
 
-				if (accumulatedMask == SwizzleMask.None) // If register is fully overridden
-					break;
-
-				if (i != context.CurrentExpressionIndex) {
-					SwizzleMask usage = context.Expressions[i]!.GetRegisterUsage(Type, Index, false);
-					if ((usage & thisMask) != SwizzleMask.None) // If any channels used here are used elsewhere
-						return this;
-				}
-			}
-
-			// If this register is used inbetween this expression and prevoius assignment (excluding current expression) to the register or end
-			if (context.CurrentExpressionIndex > 0) {
-				for (int i = context.CurrentExpressionIndex - 1; i >= 0; i--) {
+				// If this register is used inbetween this expression and next assignment (including current expression) to the register or end
+				SwizzleMask accumulatedMask = thisMask;
+				for (int i = context.CurrentExpressionIndex; i < context.Expressions.Count; i++) {
 					if (context.Expressions[i] is null)
 						continue;
 
-					// Don't try to optimize if this register's channels were read before
+					accumulatedMask ^= (accumulatedMask & context.Expressions[i]!.GetRegisterUsage(Type, Index, true));
+
+					if (accumulatedMask == SwizzleMask.None) // If register is fully overridden
+						break;
+
 					if (i != context.CurrentExpressionIndex) {
 						SwizzleMask usage = context.Expressions[i]!.GetRegisterUsage(Type, Index, false);
-						if ((usage & thisMask) != SwizzleMask.None)
+						if ((usage & thisMask) != SwizzleMask.None) // If any channels used here are used elsewhere
 							return this;
+					}
+					else if (context.Expressions[i]!.EnumerateRegisters().Count(reg => reg.Type == Type && reg.Index == Index && reg.Destination == Destination) != 1)
+						return this;
+				}
+
+				// If this register is used inbetween this expression and prevoius assignment (excluding current expression) to the register or end
+				if (context.CurrentExpressionIndex > 0) {
+					for (int i = context.CurrentExpressionIndex - 1; i >= 0; i--) {
+						if (context.Expressions[i] is null)
+							continue;
+
+						// Don't try to optimize if this register's channels were read before
+						if (i != context.CurrentExpressionIndex) {
+							SwizzleMask usage = context.Expressions[i]!.GetRegisterUsage(Type, Index, false);
+							if ((usage & thisMask) != SwizzleMask.None)
+								return this;
+						}
 					}
 				}
 			}
@@ -188,20 +195,30 @@ namespace ShaderDecompiler.Decompilers.Expressions {
 
 					if (context.Expressions[i] is AssignExpression assign) {
 						if (assign.Destination.IsSameRegisterAs(this)) {
-							if (Type == ParameterRegisterType.Const && assign.Source is ValueCtorExpression ctor && assign.Destination.FullRegister) {
-								List<Expression> values = new();
+							if (assign.Source is ValueCtorExpression ctor) {
+								if ((assign.Destination.WriteMask & thisMask) == thisMask) {
+									List<Expression> values = new();
 
-								foreach (Swizzle sw in EnumerateSwizzles())
-									values.Add(ctor.SubExpressions[(int)sw]);
+									foreach (Swizzle sw in EnumerateSwizzles())
+										values.Add(ctor.SubExpressions[(int)sw]);
 
-								if (values.Count > 0) {
-									fail = false;
+									if (values.Count > 0) {
+										fail = false;
 
-									if (values.Count == 1)
-										return values[0];
-									return ComplexExpression.Create<ValueCtorExpression>(values.ToArray());
+										if (values.Count == 1)
+											return values[0];
+
+										if (values.All(v => v is ConstantExpression)) {
+											float check = ((ConstantExpression)values[0]).Value;
+											if (values.Skip(1).All(v => v is ConstantExpression @const && @const.Value == check))
+												return values[0];
+										}
+
+										return ComplexExpression.Create<ValueCtorExpression>(values.ToArray());
+									}
 								}
 							}
+
 							if (assign.Destination.IsExactRegisterAs(this)) {
 								if (CheckWeightExceededWith(context, assign.Source))
 									return this;

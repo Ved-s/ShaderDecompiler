@@ -11,6 +11,7 @@ using ShaderDecompiler.CommandLine;
 using ShaderDecompiler.Decompilers;
 using ShaderDecompiler.XNACompatibility;
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 
 namespace ShaderDecompiler;
 
@@ -57,6 +58,16 @@ public static partial class Program {
 					Optional = true,
 					Description = "Define complexity threshold",
 				},
+
+				new("decompilationFilter", typeof(string)) {
+					ShortName = 'd',
+					Optional = true,
+					Description = 
+					"Filter techniques, passes and shaders to decomple\n" +
+					"Format: Technique/Pass/Shader\n" +
+					"Shader should be either PixelShader, VertexShader\n" +
+					"Supports regular expressions"
+				}
 			},
 			ExecutionMethod = MainCommand
 		};
@@ -80,6 +91,9 @@ public static partial class Program {
 
 		if (ctx.ArgumentCache.TryGetValue("complexityThreshold", out object? threshold))
 			settings.ComplexityThreshold = threshold as int? ?? int.MaxValue;
+
+		if (ctx.ArgumentCache.TryGetValue("decompilationFilter", out object? filter))
+			settings.ShaderPathFilter = new Regex((string)filter!, RegexOptions.Compiled);
 
 		string output;
 

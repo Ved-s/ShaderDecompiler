@@ -18,6 +18,9 @@ namespace ShaderDecompiler.Decompilers {
 		readonly Stack<string> Blocks = new();
 
 		public void Write(string str) {
+			if (str is null)
+				return;
+
 			if (str.Contains('\n')) {
 				int newlines = str.Count(c => c == '\n');
 				if (newlines > 1 || str[^1] != '\n') {
@@ -48,6 +51,9 @@ namespace ShaderDecompiler.Decompilers {
 		}
 
 		public void WriteSpaced(string str) {
+			if (str is null)
+				return;
+
 			WriteLineStart();
 			if (!LastSpace)
 				Builder.Append(' ');

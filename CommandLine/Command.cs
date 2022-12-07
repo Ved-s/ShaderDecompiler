@@ -72,7 +72,7 @@ namespace ShaderDecompiler.CommandLine {
 				builder.AppendLine();
 				builder.AppendLine();
 				builder.Append("  ");
-				builder.Append(Description);
+				builder.Append(Description.Replace("\n", "\n  "));
 			}
 
 			foreach (CommandArgument arg in Arguments) {
@@ -96,13 +96,13 @@ namespace ShaderDecompiler.CommandLine {
 				if (arg.Modifier?.Description is not null) {
 					builder.AppendLine();
 					builder.Append("    ");
-					builder.Append(arg.Description);
+					builder.Append(arg.Modifier?.Description.Replace("\n", "\n    "));
 				}
 
 				if (arg.Description is not null) {
 					builder.AppendLine();
 					builder.Append("    ");
-					builder.Append(arg.Description);
+					builder.Append(arg.Description.Replace("\n", "\n    "));
 				}
 			}
 

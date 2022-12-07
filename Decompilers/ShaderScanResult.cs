@@ -14,6 +14,7 @@ namespace ShaderDecompiler.Decompilers {
 		public readonly List<ShaderArgument> Arguments = new();
 		public readonly HashSet<(ParameterRegisterType type, uint index, bool dest)> RegistersReferenced = new();
 		public readonly Dictionary<(ParameterRegisterType, uint), uint> RegisterSizes = new();
+		public readonly HashSet<uint> DeclaredConstants = new();
 
 		public ShaderScanResult() {
 		}

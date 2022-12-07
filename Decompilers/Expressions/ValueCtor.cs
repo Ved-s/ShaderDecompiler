@@ -15,6 +15,19 @@ namespace ShaderDecompiler.Decompilers.Expressions {
 			return $"float{SubExpressions.Length}({string.Join(", ", SubExpressions.Select(expr => expr.Decompile(context)))})";
 		}
 
+		public override void MaskSwizzle(SwizzleMask mask) {
+			int size = mask.HasFlag(SwizzleMask.W) ? 4
+					 : mask.HasFlag(SwizzleMask.Z) ? 3
+					 : mask.HasFlag(SwizzleMask.Y) ? 2
+					 : mask.HasFlag(SwizzleMask.X) ? 1 : 0;
+
+			if (size > 0 && size < SubExpressions.Length) {
+				Array.Resize(ref SubExpressions, size);
+			}
+
+			base.MaskSwizzle(mask);
+		}
+
 		public override string ToString() {
 			return $"float{SubExpressions.Length}({string.Join(", ", (object[])SubExpressions)})";
 		}

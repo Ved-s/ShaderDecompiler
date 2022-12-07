@@ -22,7 +22,7 @@ namespace ShaderDecompiler.CommandLine {
 			if (!reader.TryMatch(StringRegex, out Match match, true))
 				return false;
 
-			value = match.Groups[match.Groups[1].Success ? 1 : 2].Value;
+			value = Regex.Unescape(match.Groups[match.Groups[1].Success ? 1 : 2].Value);
 			return true;
 		}
 	}

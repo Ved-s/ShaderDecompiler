@@ -9,8 +9,6 @@
 
 using ShaderDecompiler.Decompilers.Expressions;
 using ShaderDecompiler.Structures;
-using System.Collections.Generic;
-using System.Diagnostics;
 
 namespace ShaderDecompiler.Decompilers {
 	public class ShaderDecompiler {
@@ -131,6 +129,10 @@ namespace ShaderDecompiler.Decompilers {
 					}
 				}
 
+				if (op.Type == OpcodeType.Def && op.Destination is not null && op.Destination.RegisterType == ParameterRegisterType.Const) {
+					Context.Scan.DeclaredConstants.Add(op.Destination.Register);
+				}
+
 				if (op.Destination is not null) {
 					DestinationParameter dest = op.Destination;
 
@@ -168,13 +170,6 @@ namespace ShaderDecompiler.Decompilers {
 					Context.Scan.UpdateRegisterSize(src.RegisterType, src.Register, registerSize);
 				}
 			}
-
-			//foreach (Constant constant in Shader.Constants) {
-			//	ParameterRegisterType type = constant.RegSet switch {
-			//		RegSet.Sampler => ParameterRegisterType.Sampler,
-			//		_ => ParameterRegisterType.Const
-			//	};
-			//}
 
 			foreach (var (type, index, dest) in Context.Scan.RegistersReferenced) {
 				if (dest && type == ParameterRegisterType.Colorout) {
@@ -270,21 +265,21 @@ namespace ShaderDecompiler.Decompilers {
 			foreach (var (type, index, _) in Context.Scan.RegistersReferenced) {
 				Context.Scan.RegisterSizes.Remove((type, index));
 			}
-			
+
 			foreach (Expression? expr in Context.Expressions) {
 				if (expr is null)
 					continue;
-			
+
 				foreach (var (type, index, _) in Context.Scan.RegistersReferenced) {
 					SwizzleMask mask = expr.GetRegisterUsage(type, index, null);
 					if (mask == SwizzleMask.None)
 						continue;
-			
+
 					uint registerSize = mask.HasFlag(SwizzleMask.W) ? 4u
 									  : mask.HasFlag(SwizzleMask.Z) ? 3u
 									  : mask.HasFlag(SwizzleMask.Y) ? 2u
 									  : 1u;
-			
+
 					Context.Scan.UpdateRegisterSize(type, index, registerSize);
 				}
 			}
@@ -341,6 +336,8 @@ namespace ShaderDecompiler.Decompilers {
 						i--;
 					}
 				}
+
+
 			}
 
 			bool canClean = true;

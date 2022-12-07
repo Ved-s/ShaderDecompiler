@@ -1,9 +1,0 @@
-{
-  "profiles": {
-    "ShaderDecompiler": {
-      "commandName": "Project",
-      "commandLineArgs": "-ft B:/Repos/ShaderDecompiler/Testdata/Shader.fxb 5",
-      "remoteDebugEnabled": false
-    }
-  }
-}

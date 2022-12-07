@@ -19,6 +19,18 @@ namespace ShaderDecompiler.Decompilers.Expressions {
 			return $"-{Expression.Decompile(context)}";
 		}
 
+
+		public override Expression SimplifySelf(ShaderDecompilationContext context, bool allowComplexityIncrease, out bool fail) {
+			fail = true;
+
+			if (Expression is SubtractionExpression sub) {
+				fail = false;
+				return Create<SubtractionExpression>(sub.B, sub.A);
+			}
+
+			return this;
+		}
+
 		public override string ToString() {
 			bool needsWrap = Expression is ComplexExpression and not CallExpression;
 			if (needsWrap)

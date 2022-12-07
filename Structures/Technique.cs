@@ -30,6 +30,7 @@ namespace ShaderDecompiler.Structures {
 		public string? Name;
 		public StateType Type;
 		public Value Value = null!;
+		public bool Ignored = false;
 
 		public override string ToString() {
 			return $"{Type};";
