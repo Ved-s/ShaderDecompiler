@@ -19,7 +19,7 @@ namespace ShaderDecompiler.Decompilers {
 			Effect = effect;
 		}
 
-		public string Decompile() {
+		public string Decompile(DecompilationSettings? settings = null) {
 			Writer.Clear();
 
 			foreach (Parameter param in Effect.Parameters)
@@ -40,7 +40,7 @@ namespace ShaderDecompiler.Decompilers {
 						}
 
 						ShaderDecompiler decompiler = new(shader);
-						decompiler.Decompile(Writer, state.Name);
+						decompiler.Decompile(Writer, state.Name, settings);
 						
 						Writer.NewLine();
 						Writer.NewLine();

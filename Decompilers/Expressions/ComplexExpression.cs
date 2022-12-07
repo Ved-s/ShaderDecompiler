@@ -44,7 +44,7 @@ namespace ShaderDecompiler.Decompilers.Expressions {
 			fail = true;
 
 			for (int i = 0; i < SubExpressions.Length; i++) {
-				bool tooComplex = CalculateComplexity() + SubExpressions[i].CalculateComplexity() > context.ComplexityThreshold;
+				bool tooComplex = CalculateComplexity() + SubExpressions[i].CalculateComplexity() > context.Settings.ComplexityThreshold;
 
 				SubExpressions[i] = SubExpressions[i].Simplify(context, allowComplexityIncrease && !tooComplex, out bool exprFail);
 				fail &= exprFail;

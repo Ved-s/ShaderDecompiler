@@ -18,11 +18,11 @@ namespace ShaderDecompiler.Decompilers {
 
 		public List<Expression?> Expressions = new();
 		public int CurrentExpressionIndex = 0;
+		public DecompilationSettings Settings;
 
-		public int ComplexityThreshold = int.MaxValue;
-
-		public ShaderDecompilationContext(Shader shader) {
+		public ShaderDecompilationContext(Shader shader, DecompilationSettings? settings = null) {
 			Shader = shader;
+			Settings = settings ?? new();
 		}
 	}
 }

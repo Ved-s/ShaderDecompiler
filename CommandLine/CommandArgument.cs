@@ -12,7 +12,8 @@ namespace ShaderDecompiler.CommandLine {
 		static List<ArgumentValueParser> ArgumentParsers = new()
 		{
 			new StringValueParser(),
-			new DBNullValueParser()
+			new DBNullValueParser(),
+			new IntValueParser()
 		};
 
 		public string Name { get; init; }

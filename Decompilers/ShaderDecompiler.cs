@@ -22,9 +22,9 @@ namespace ShaderDecompiler.Decompilers {
 			Shader = shader;
 		}
 
-		public void Decompile(CodeWriter writer, string entryPointName) {
+		public void Decompile(CodeWriter writer, string entryPointName, DecompilationSettings? settings = null) {
 			Writer = writer;
-			Context = new(Shader);
+			Context = new(Shader, settings);
 
 			ScanShader();
 			CreateShaderRegisterNames();
@@ -327,9 +327,9 @@ namespace ShaderDecompiler.Decompilers {
 						continue;
 
 					Context.CurrentExpressionIndex = i;
-					bool tooComplex = expr.CalculateComplexity() > Context.ComplexityThreshold;
+					bool tooComplex = expr.CalculateComplexity() > Context.Settings.ComplexityThreshold;
 
-					Context.Expressions[i] = expr.Simplify(Context, !tooComplex, out bool fail);
+					Context.Expressions[i] = expr.Simplify(Context, !tooComplex && !Context.Settings.MinimumSimplifications, out bool fail);
 					if (!fail)
 						canSimplify = true;
 				}

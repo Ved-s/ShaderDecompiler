@@ -27,6 +27,7 @@ public static partial class Program {
 			Description = "HLSL Shader decompilation utility",
 			Arguments = {
 				new("help") { ShortName = 'h', Optional = true },
+
 				new("xnb", typeof(string)) {
 					ShortName = 'x',
 					Optional = true,
@@ -45,6 +46,17 @@ public static partial class Program {
 					Description = "Output file",
 					Modifier = new ValidFile()
 				},
+
+				new("minSimplify") {
+					ShortName = 'm',
+					Optional = true,
+					Description = "Disable most of simplification algorithms",
+				},
+				new("complexityThreshold", typeof(int)) {
+					ShortName = 't',
+					Optional = true,
+					Description = "Define complexity threshold",
+				},
 			},
 			ExecutionMethod = MainCommand
 		};
@@ -62,19 +74,26 @@ public static partial class Program {
 			return;
 		}
 
+		DecompilationSettings settings = new();
+		if (ctx.ArgumentCache.ContainsKey("minSimplify"))
+			settings.MinimumSimplifications = true;
+
+		if (ctx.ArgumentCache.TryGetValue("complexityThreshold", out object? threshold))
+			settings.ComplexityThreshold = threshold as int? ?? int.MaxValue;
+
 		string output;
 
 		if (xnb is not null) {
 			using FileStream fs = File.OpenRead(xnb);
 			using BinaryReader reader = new(fs);
 			Effect effect = XnbReader.ReadEffect(reader);
-			output = new EffectDecompiler(effect).Decompile();
+			output = new EffectDecompiler(effect).Decompile(settings);
 		}
 		else if (fx is not null) {
 			using FileStream fs = File.OpenRead(fx);
 			using BinaryReader reader = new(fs);
 			Effect effect = Effect.Read(reader);
-			output = new EffectDecompiler(effect).Decompile();
+			output = new EffectDecompiler(effect).Decompile(settings);
 		}
 		else {
 			ctx.Caller.Respond("No input file specified");
