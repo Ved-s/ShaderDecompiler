@@ -4,14 +4,8 @@ namespace ShaderDecompiler.CommandLine {
 	public class ValidFile : ArgumentValueModifier {
 		public override string Name => "FilePath";
 
-		static HashSet<char> InvalidFilePathChars = new HashSet<char>();
-
-		static ValidFile() {
-			InvalidFilePathChars.UnionWith(Path.GetInvalidPathChars());
-			InvalidFilePathChars.UnionWith(Path.GetInvalidFileNameChars());
-			InvalidFilePathChars.Remove('/');
-			InvalidFilePathChars.Remove('\\');
-		}
+		static HashSet<char> InvalidFilePathChars = new HashSet<char>(Path.GetInvalidPathChars());
+		static HashSet<char> InvalidFileNameChars = new HashSet<char>(Path.GetInvalidFileNameChars());
 
 		public override bool CanModify(Type type) => type == typeof(string);
 
@@ -23,7 +17,12 @@ namespace ShaderDecompiler.CommandLine {
 		}
 
 		public static bool ValidateFilePath(string path) {
-			return path.All(c => !InvalidFilePathChars.Contains(c));
+			string? dir = Path.GetDirectoryName(path);
+			if (dir is not null && dir.Any(c => InvalidFilePathChars.Contains(c)))
+				return false;
+
+			string? file = Path.GetFileName(path);
+			return file is not null && file.All(c => !InvalidFileNameChars.Contains(c));
 		}
 	}
 }

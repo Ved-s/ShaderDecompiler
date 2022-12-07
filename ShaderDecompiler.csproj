@@ -11,5 +11,4 @@
 	<Exec Command="fxc /T fx_2_0 /Fo TestData/Shader.fxb TestData/Shader.fx" />
 	<!-- <Exec Command="fxcompiler" WorkingDirectory="TestData"/> -->
   </Target>
-	
 </Project>
