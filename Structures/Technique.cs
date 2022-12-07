@@ -1,4 +1,13 @@
-﻿namespace ShaderDecompiler.Structures {
+#region License
+/*
+  ShaderDecompiler - Direct3D shader decompiler
+
+  Released under Microsoft Public License
+  See LICENSE for details
+*/
+#endregion
+
+namespace ShaderDecompiler.Structures {
 	public class Technique : AnnotatedObject {
 		public string? Name;
 		public Pass[] Passes = Array.Empty<Pass>();

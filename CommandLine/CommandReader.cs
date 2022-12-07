@@ -1,4 +1,13 @@
-﻿using System.Text.RegularExpressions;
+#region License
+/*
+  ShaderDecompiler - Direct3D shader decompiler
+
+  Released under Microsoft Public License
+  See LICENSE for details
+*/
+#endregion
+
+using System.Text.RegularExpressions;
 
 namespace ShaderDecompiler.CommandLine {
 	public class CommandReader {

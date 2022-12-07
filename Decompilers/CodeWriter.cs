@@ -1,4 +1,13 @@
-﻿using System.Text;
+#region License
+/*
+  ShaderDecompiler - Direct3D shader decompiler
+
+  Released under Microsoft Public License
+  See LICENSE for details
+*/
+#endregion
+
+using System.Text;
 
 namespace ShaderDecompiler.Decompilers {
 	public class CodeWriter {

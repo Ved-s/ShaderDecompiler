@@ -1,4 +1,13 @@
-﻿namespace ShaderDecompiler.Structures {
+#region License
+/*
+  ShaderDecompiler - Direct3D shader decompiler
+
+  Released under Microsoft Public License
+  See LICENSE for details
+*/
+#endregion
+
+namespace ShaderDecompiler.Structures {
 	public enum SamplerStateType : uint {
 		Unknown0 = 0,
 		Unknown1 = 1,

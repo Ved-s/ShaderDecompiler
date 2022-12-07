@@ -1,4 +1,13 @@
-﻿using ShaderDecompiler.Structures;
+#region License
+/*
+  ShaderDecompiler - Direct3D shader decompiler
+
+  Released under Microsoft Public License
+  See LICENSE for details
+*/
+#endregion
+
+using ShaderDecompiler.Structures;
 
 namespace ShaderDecompiler.Decompilers.Expressions {
 	public class AssignExpression : ComplexExpression {

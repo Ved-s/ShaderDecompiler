@@ -1,4 +1,13 @@
-﻿namespace ShaderDecompiler.Decompilers.Expressions {
+#region License
+/*
+  ShaderDecompiler - Direct3D shader decompiler
+
+  Released under Microsoft Public License
+  See LICENSE for details
+*/
+#endregion
+
+namespace ShaderDecompiler.Decompilers.Expressions {
 	public class NegateExpression : ComplexExpression {
 		public Expression Expression => SubExpressions[0];
 		public override ValueCheck<int> ArgumentCount => 1;

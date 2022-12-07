@@ -1,4 +1,13 @@
-﻿using ShaderDecompiler.CommandLine;
+#region License
+/*
+  ShaderDecompiler - Direct3D shader decompiler
+
+  Released under Microsoft Public License
+  See LICENSE for details
+*/
+#endregion
+
+using ShaderDecompiler.CommandLine;
 using ShaderDecompiler.Decompilers;
 using ShaderDecompiler.XNACompatibility;
 using System.Diagnostics;

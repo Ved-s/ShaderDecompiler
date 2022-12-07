@@ -1,4 +1,13 @@
-﻿namespace ShaderDecompiler.Decompilers {
+#region License
+/*
+  ShaderDecompiler - Direct3D shader decompiler
+
+  Released under Microsoft Public License
+  See LICENSE for details
+*/
+#endregion
+
+namespace ShaderDecompiler.Decompilers {
 	public struct ValueCheck<T> {
 		readonly Func<T?, bool>? CheckDelegate;
 		readonly T? ConstantValue;

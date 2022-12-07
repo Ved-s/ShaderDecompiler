@@ -1,4 +1,13 @@
-﻿namespace ShaderDecompiler.Decompilers.Expressions {
+#region License
+/*
+  ShaderDecompiler - Direct3D shader decompiler
+
+  Released under Microsoft Public License
+  See LICENSE for details
+*/
+#endregion
+
+namespace ShaderDecompiler.Decompilers.Expressions {
 	public class ValueCtorExpression : ComplexExpression {
 		public override ValueCheck<int> ArgumentCount => new(v => v > 0 && v <= 4);
 
