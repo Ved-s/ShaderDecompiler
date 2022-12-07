@@ -38,11 +38,11 @@ namespace ShaderDecompiler {
 
 				case FXLCHeader:
 					ReadFXLC(reader);
-					break;
+					return true;
 
 				case PRSIHeader:
 					ReadPRSI(reader);
-					break;
+					return true;
 
 			}
 			return false;
@@ -121,34 +121,42 @@ namespace ShaderDecompiler {
 				uint operandType = reader.ReadUInt32();
 				uint operandItem = reader.ReadUInt32();
 
+				uint actualRegister = operandItem / 4;
+				Swizzle swizzle = (Swizzle)(operandItem % 4);
+
+				if (operandType == 1) {
+					swizzle = Swizzle.X;
+					actualRegister = operandItem;
+				}
+
 				OpcodeParameter param;
 				if (i == opcode.Length - 1) {
 					opcode.Destination = new() { 
-						WriteX = true,
-						WriteY = true,
-						WriteZ = true,
-						WriteW = true,
+						WriteX = swizzle == Swizzle.X,
+						WriteY = swizzle == Swizzle.Y,
+						WriteZ = swizzle == Swizzle.Z,
+						WriteW = swizzle == Swizzle.W,
 					};
 					param = opcode.Destination;
 				}
 				else {
 					opcode.Sources[i] = new() {
-						SwizzleX = Swizzle.X,
-						SwizzleY = Swizzle.Y,
-						SwizzleZ = Swizzle.Z,
-						SwizzleW = Swizzle.W
+						SwizzleX = swizzle,
+						SwizzleY = swizzle,
+						SwizzleZ = swizzle,
+						SwizzleW = swizzle
 					};
 					param = opcode.Sources[i];
 				}
-				param.Register = operandItem;
+				param.Register = actualRegister;
 
 				switch (operandType) {
 					case 1:
-						param.RegisterType = ParameterRegisterType.Literal;
+						param.RegisterType = ParameterRegisterType.PreshaderLiteral;
 						break;
 
 					case 2:
-						param.RegisterType = ParameterRegisterType.Input;
+						param.RegisterType = ParameterRegisterType.PreshaderInput;
 						for (int j = 0; j < operandArrayCount; j++) {
 							reader.ReadUInt32();
 							reader.ReadUInt32();
@@ -157,11 +165,11 @@ namespace ShaderDecompiler {
 						break;
 
 					case 4:
-						param.RegisterType = ParameterRegisterType.Output;
+						param.RegisterType = ParameterRegisterType.Const;
 						break;
 
 					case 7:
-						param.RegisterType = ParameterRegisterType.Temp;
+						param.RegisterType = ParameterRegisterType.PreshaderTemp;
 						break;
 
 					default:

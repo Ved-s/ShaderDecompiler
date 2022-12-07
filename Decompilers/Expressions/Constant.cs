@@ -13,6 +13,10 @@ namespace ShaderDecompiler.Decompilers.Expressions {
 			return Value.ToString(CultureInfo.InvariantCulture);
 		}
 
+		public override IEnumerable<RegisterExpression> EnumerateRegisters() {
+			yield break;
+		}
+
 		public override SwizzleMask GetRegisterUsage(ParameterRegisterType type, uint index, bool? destination) => SwizzleMask.None;
 
 		public override string ToString() {

@@ -25,6 +25,12 @@ namespace ShaderDecompiler.Decompilers.Expressions {
 			return SubExpressions.Select(expr => expr.GetRegisterUsage(type, index, destination)).SafeAggregate((a, b) => a | b);
 		}
 
+		public override IEnumerable<RegisterExpression> EnumerateRegisters() {
+			foreach (Expression expr in SubExpressions)
+				foreach (RegisterExpression register in expr.EnumerateRegisters())
+					yield return register;
+		}
+
 		public sealed override Expression Simplify(ShaderDecompilationContext context, bool allowComplexityIncrease, out bool fail) {
 			fail = true;
 

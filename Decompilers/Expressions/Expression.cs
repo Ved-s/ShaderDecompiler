@@ -7,6 +7,7 @@ namespace ShaderDecompiler.Decompilers.Expressions {
 		public abstract Expression Clone();
 
 		public abstract SwizzleMask GetRegisterUsage(ParameterRegisterType type, uint index, bool? destination);
+		public abstract IEnumerable<RegisterExpression> EnumerateRegisters();
 
 		public virtual Expression Simplify(ShaderDecompilationContext context, bool allowComplexityIncrease, out bool fail) {
 			fail = true;
@@ -23,6 +24,6 @@ namespace ShaderDecompiler.Decompilers.Expressions {
 		public static Expression operator *(Expression a, Expression b) => ComplexExpression.Create<MultiplicationExpression>(a, b);
 		public static Expression operator /(Expression a, Expression b) => ComplexExpression.Create<DivisionExpression>(a, b);
 
-		public static Expression operator -(Expression a) => ComplexExpression.Create<DivisionExpression>(a);
+		public static Expression operator -(Expression a) => ComplexExpression.Create<NegateExpression>(a);
 	}
 }

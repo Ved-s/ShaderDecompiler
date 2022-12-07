@@ -29,6 +29,31 @@ namespace ShaderDecompiler.Decompilers.Expressions {
 
 		public SwizzleMask UsageMask => EnumerateSwizzles().Select(sw => sw.ToMask()).SafeAggregate((a, b) => a | b);
 
+		public bool Ordered {
+			get {
+				Swizzle current = Swizzle.X;
+				foreach (Swizzle sw in EnumerateSwizzles()) {
+					if (sw != current)
+						return false;
+					current++;
+				}
+				return true;
+			}
+		}
+		public bool Single {
+			get {
+				Swizzle? swizzle = null;
+				foreach (Swizzle sw in EnumerateSwizzles()) {
+					if (swizzle is null)
+						swizzle = sw;
+					else if (swizzle.Value != sw)
+						return false;
+				}
+				return true;
+				
+			}
+		}
+
 		public RegisterExpression(ParameterRegisterType type, uint index, Swizzle? x, Swizzle? y, Swizzle? z, Swizzle? w, bool destination) {
 			Type = type;
 			Index = index;
@@ -46,21 +71,32 @@ namespace ShaderDecompiler.Decompilers.Expressions {
 			return SwizzleMask.None;
 		}
 
+		public override IEnumerable<RegisterExpression> EnumerateRegisters() {
+			yield return this;
+		}
+
 		public override string Decompile(ShaderDecompilationContext context) {
-			if (FullRegister)
+
+			bool full = FullRegister;
+
+			if ((Ordered || Single) && context.Scan.RegisterSizes.TryGetValue((Type, Index), out uint size) && ((int)UsageMask).Bits() == size)
+				full = true;
+
+			if (full)
 				return GetName(context);
 
-			// TODO: Uncomment this when registers are fully fixed
-
-			//if (X.HasValue && Y.HasValue && Z.HasValue && W.HasValue && X.Value == Y.Value && Y.Value == Z.Value && Z.Value == W.Value)
-			//    return $"{GetName(context)}.{X?.ToString().ToLower()}";
+			if (X.HasValue && Y.HasValue && Z.HasValue && W.HasValue && X.Value == Y.Value && Y.Value == Z.Value && Z.Value == W.Value)
+			    return $"{GetName(context)}.{X?.ToString().ToLower()}";
 
 			return $"{GetName(context)}.{X?.ToString().ToLower()}{Y?.ToString().ToLower()}{Z?.ToString().ToLower()}{W?.ToString().ToLower()}";
 		}
 
 		public string GetName(ShaderDecompilationContext context) {
 			if (!context.RegisterNames.TryGetValue((Type, Index), out string? name))
-				name = $"{Type.ToString().ToLower()}{Index}";
+				if (SourceParameter.RegisterTypeNames.TryGetValue(Type, out name))
+					name = $"{name}{Index}";
+				else
+					name = $"{Type.ToString().ToLower()}{Index}";
 			return name;
 		}
 
@@ -85,7 +121,18 @@ namespace ShaderDecompiler.Decompilers.Expressions {
 		public override Expression Simplify(ShaderDecompilationContext context, bool allowComplexityIncrease, out bool fail) {
 			fail = true;
 
-			if (Destination || !allowComplexityIncrease)
+			if (Destination)
+				return this;
+
+			if (Type == ParameterRegisterType.PreshaderLiteral 
+			 && context.Shader.Preshader is Preshader pres 
+			 && pres.Literals is not null 
+			 && Index < pres.Literals.Length) {
+				fail = false;
+				return new ConstantExpression((float)pres.Literals[Index]);
+			}
+
+			if (!allowComplexityIncrease)
 				return this;
 
 			// If this register is used inbetween this expression and next assignment (including current expression) to the register or end

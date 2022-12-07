@@ -102,11 +102,6 @@ namespace ShaderDecompiler {
 
 				case PRESHeader:
 					Preshader = Preshader.Read(reader, this);
-
-					foreach (Constant @const in Preshader.Constants)
-						if (!Constants.Any(c => c.RegSet == @const.RegSet && c.RegIndex == @const.RegIndex))
-							Constants.Add(@const);
-
 					return true;
 
 			}

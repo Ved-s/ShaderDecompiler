@@ -8,6 +8,7 @@ public class SourceParameter : OpcodeParameter {
 		[ParameterRegisterType.Input] = "arg",
 		[ParameterRegisterType.Const] = "const",
 		[ParameterRegisterType.Output] = "out",
+		[ParameterRegisterType.PreshaderTemp] = "ptmp",
 	};
 	public static readonly Dictionary<Swizzle, string> SwizzleNames = new() {
 		[Swizzle.X] = "x",

@@ -1,4 +1,6 @@
-﻿namespace ShaderDecompiler.Decompilers.Expressions {
+﻿using ShaderDecompiler.Structures;
+
+namespace ShaderDecompiler.Decompilers.Expressions {
 	public class AssignExpression : ComplexExpression {
 		public override ValueCheck<int> ArgumentCount => 2;
 
@@ -11,12 +13,34 @@
 					.Take(context.CurrentExpressionIndex)
 					.All(expr => expr is not AssignExpression assign || !assign.Destination.IsSameRegisterAs(Destination)));
 
+			bool inlineType = Destination.FullRegister;
+
+			if (needsType && context.Scan.RegisterSizes.TryGetValue((Destination.Type, Destination.Index), out uint size)) {
+				if (size >= 1 && Destination.X == Swizzle.X) {
+					if (size == 1)
+						inlineType = true;
+
+					if (size >= 2 && Destination.Y == Swizzle.Y) {
+						if (size == 2)
+							inlineType = true;
+
+						if (size >= 3 && Destination.Z == Swizzle.Z) {
+							if (size == 2)
+								inlineType = true;
+
+							if (Destination.W == Swizzle.W)
+								inlineType = true;
+						}
+					}
+				}
+			}
+
 			string type = "";
 			if (needsType) {
-				if (!context.Scan.RegisterSizes.TryGetValue((Destination.Type, Destination.Index), out uint size))
+				if (!context.Scan.RegisterSizes.TryGetValue((Destination.Type, Destination.Index), out size))
 					size = 4;
 
-				if (!Destination.FullRegister) {
+				if (!inlineType) {
 					if (size > 1)
 						type = $"float{size} {Destination.GetName(context)};\n";
 					else

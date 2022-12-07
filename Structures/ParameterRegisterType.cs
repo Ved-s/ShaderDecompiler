@@ -22,10 +22,13 @@
 		Predicate = 19,
 
 		// Assigned manually
-		Texcrdout = 106,
-		Texture = 103,
+		Texcrdout = 100,
+		Texture = 101,
+		
 
 		// Preshader register types
-		Literal = 200
+		PreshaderLiteral = 200,
+		PreshaderInput = 201,
+		PreshaderTemp = 202,
 	}
 }

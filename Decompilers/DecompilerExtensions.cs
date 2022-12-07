@@ -76,5 +76,19 @@ namespace ShaderDecompiler.Decompilers {
 
 			return value;
 		}
+
+		public static int Bits(this int value) {
+			int bits = 0;
+			for (int i = 0; i < 32; i++) {
+				if ((value & 1) != 0)
+					bits++;
+
+				if (value == 0)
+					return bits;
+
+				value >>= 1;
+			}
+			return bits;
+		}
 	}
 }
