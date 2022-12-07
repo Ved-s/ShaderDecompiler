@@ -171,6 +171,20 @@ namespace ShaderDecompiler.Decompilers {
 				}
 			}
 
+			foreach (Constant constant in Context.Shader.Constants) {
+				ParameterRegisterType type = constant.RegSet switch {
+					RegSet.Sampler => ParameterRegisterType.Sampler,
+					_ => ParameterRegisterType.Const
+				};
+
+				Context.Scan.RegisterSizes[(type, constant.RegIndex)] = constant.TypeInfo.Columns;
+			}
+
+			if (Context.Shader.Preshader is not null)
+				foreach (Constant constant in Context.Shader.Preshader.Constants) {
+					Context.Scan.RegisterSizes[(ParameterRegisterType.PreshaderInput, constant.RegIndex)] = constant.TypeInfo.Columns;
+				}
+
 			foreach (var (type, index, dest) in Context.Scan.RegistersReferenced) {
 				if (dest && type == ParameterRegisterType.Colorout) {
 					ShaderArgument arg = Context.Scan.GetArgument(ParameterRegisterType.Colorout, index);
@@ -298,6 +312,22 @@ namespace ShaderDecompiler.Decompilers {
 						continue;
 
 					foreach (RegisterExpression register in expr.EnumerateRegisters()) {
+						if (register.Type == ParameterRegisterType.Const) {
+							Constant? @const = Context.Shader.Constants.FirstOrDefault(c => c.RegIndex == register.Index);
+							if (@const is not null) {
+								Context.Scan.RegisterSizes[(register.Type, register.Index)] = @const.TypeInfo.Columns;
+								continue;
+							}
+						}
+
+						if (register.Type == ParameterRegisterType.PreshaderInput && Context.Shader.Preshader is not null) {
+							Constant? @const = Context.Shader.Preshader.Constants.FirstOrDefault(c => c.RegIndex == register.Index);
+							if (@const is not null) {
+								Context.Scan.RegisterSizes[(register.Type, register.Index)] = @const.TypeInfo.Columns;
+								continue;
+							}
+						}
+
 						SwizzleMask mask = register.UsageMask;
 
 						uint registerSize = mask.HasFlag(SwizzleMask.W) ? 4u
@@ -362,6 +392,9 @@ namespace ShaderDecompiler.Decompilers {
 			Opcode op = opcodes.Pop();
 
 			Expression assign;
+			RegisterExpression? destination = op.Destination?.ToExpr();
+
+			SwizzleMask writeMask = destination?.WriteMask ?? SwizzleMask.All;
 
 			switch (op.Type) {
 				case OpcodeType.Nop:
@@ -403,6 +436,20 @@ namespace ShaderDecompiler.Decompilers {
 
 				case OpcodeType.Mov:
 					assign = op.Sources[0].ToExpr();
+					break;
+
+				case OpcodeType.Sincos:
+					Expression sin = new CallExpression("sin", op.Sources[0].ToExpr());
+					Expression cos = new CallExpression("cos", op.Sources[0].ToExpr());
+
+					if (writeMask.HasFlag(SwizzleMask.Y) && !writeMask.HasFlag(SwizzleMask.X))
+						assign = sin;
+
+					else if (writeMask.HasFlag(SwizzleMask.X) && !writeMask.HasFlag(SwizzleMask.Y))
+						assign = cos;
+
+					else 
+						assign = ComplexExpression.Create<ValueCtorExpression>(cos, sin);
 					break;
 
 				case OpcodeType.Lrp:
