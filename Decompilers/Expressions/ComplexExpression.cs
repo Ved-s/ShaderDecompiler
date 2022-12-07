@@ -43,16 +43,19 @@ namespace ShaderDecompiler.Decompilers.Expressions {
 		public sealed override Expression Simplify(ShaderDecompilationContext context, bool allowComplexityIncrease, out bool fail) {
 			fail = true;
 
+			Expression expr = SimplifySelf(context, allowComplexityIncrease, out bool selfFail);
+			if (!selfFail) {
+				fail = false;
+				return expr;
+			}
+
 			for (int i = 0; i < SubExpressions.Length; i++) {
 				bool tooComplex = CalculateComplexity() + SubExpressions[i].CalculateComplexity() > context.Settings.ComplexityThreshold;
 
 				SubExpressions[i] = SubExpressions[i].Simplify(context, allowComplexityIncrease && !tooComplex, out bool exprFail);
 				fail &= exprFail;
 			}
-
-			Expression expr = SimplifySelf(context, allowComplexityIncrease, out bool selfFail);
-			fail &= selfFail;
-			return expr;
+			return this;
 		}
 
 		public sealed override Expression Clone() {

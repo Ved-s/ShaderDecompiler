@@ -8,6 +8,7 @@
 #endregion
 
 using ShaderDecompiler.Structures;
+using System.Diagnostics;
 
 namespace ShaderDecompiler.Decompilers.Expressions {
 	public class RegisterExpression : Expression {
@@ -155,25 +156,34 @@ namespace ShaderDecompiler.Decompilers.Expressions {
 					if (context.Expressions[i] is null)
 						continue;
 
-					accumulatedMask ^= (accumulatedMask & context.Expressions[i]!.GetRegisterUsage(Type, Index, true));
-
-					if (accumulatedMask == SwizzleMask.None) // If register is fully overridden
-						break;
-
 					if (i != context.CurrentExpressionIndex) {
 						SwizzleMask usage = context.Expressions[i]!.GetRegisterUsage(Type, Index, false);
 						if ((usage & thisMask) != SwizzleMask.None) // If any channels used here are used elsewhere
 							return this;
 					}
-					else if (context.Expressions[i]!.EnumerateRegisters().Count(reg => reg.Type == Type && reg.Index == Index && reg.Destination == Destination) != 1)
+
+					accumulatedMask ^= (accumulatedMask & context.Expressions[i]!.GetRegisterUsage(Type, Index, true));
+
+					if (accumulatedMask == SwizzleMask.None) // If register is fully overridden
+						break;
+
+					else if (context.Expressions[i]!.EnumerateRegisters().Count(reg => reg.Type == Type && reg.Index == Index && reg.Destination == Destination) > 1)
 						return this;
 				}
 
 				// If this register is used inbetween this expression and prevoius assignment (excluding current expression) to the register or end
+
 				if (context.CurrentExpressionIndex > 0) {
 					for (int i = context.CurrentExpressionIndex - 1; i >= 0; i--) {
 						if (context.Expressions[i] is null)
 							continue;
+
+						SwizzleMask write = context.Expressions[i]!.GetRegisterUsage(Type, Index, true);
+						if (write == thisMask) // Register is fully written
+							break;
+
+						if ((write & thisMask) != SwizzleMask.None) // Register is partially written before
+							return this;
 
 						// Don't try to optimize if this register's channels were read before
 						if (i != context.CurrentExpressionIndex) {
@@ -181,6 +191,7 @@ namespace ShaderDecompiler.Decompilers.Expressions {
 							if ((usage & thisMask) != SwizzleMask.None)
 								return this;
 						}
+
 					}
 				}
 			}

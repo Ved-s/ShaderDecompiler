@@ -9,6 +9,7 @@
 
 using ShaderDecompiler.Decompilers.Expressions;
 using ShaderDecompiler.Structures;
+using System.Diagnostics;
 
 namespace ShaderDecompiler.Decompilers {
 	public class ShaderDecompiler {
@@ -375,7 +376,6 @@ namespace ShaderDecompiler.Decompilers {
 			while (canClean) {
 				canClean = false;
 				cycle++;
-				//Console.WriteLine($"Cleaning cycle {cycle}: {Context.Expressions.Count} expressions");
 
 				for (int i = 0; i < Context.Expressions.Count; i++) {
 					Context.CurrentExpressionIndex = i;
@@ -386,6 +386,10 @@ namespace ShaderDecompiler.Decompilers {
 					}
 				}
 			}
+
+			//Context.CurrentExpressionIndex = 3;
+			//Expression ex = Context.Expressions[3]!.Simplify(Context, true, out bool f);
+			//Debugger.Break();
 		}
 
 		Expression? CreateExpression(Stack<Opcode> opcodes) {
